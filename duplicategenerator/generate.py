@@ -159,6 +159,7 @@ import utils
 import os
 import config as cf
 import pandas
+import numpy
 
 # Set this flag to True for verbose output, otherwise to False - - - - - - - -
 #
@@ -721,7 +722,11 @@ class DataSetGen:
    
   def _create_duplicate_records(self, org_rec,prob_dist_list,new_org_rec, 
                                  select_prob_list, all_rec_set,freq_files_length,freq_files):
-    """  Create duplicate records """
+    """  
+    Create duplicate records 
+    
+    """
+    
     dup_rec = {}  # Dictionary for duplicate records
 
     org_rec_used = {}  # Dictionary with record IDs of original records used to
@@ -1336,6 +1341,16 @@ class DataSetGen:
     return dup_rec ,org_rec_used
 
   def generate(self,output="dict") :
+    """ 
+    Main function to generate the synthetic dataset
+    
+    Parameters
+    -----------
+    
+    output : Return type of the generator ( a dictionary or 
+             a dataframe)
+    
+    """
     
     # Initialise random number generator  - - - - - - - - - - - - - - - - - - - - -
     #
@@ -1390,10 +1405,49 @@ class DataSetGen:
     if(output == "dict") :
       return all_rec
     elif(output == "dataframe"):
-      return pandas.DataFrame(all_rec.values())
+      return pandas.DataFrame(all_rec.values()).set_index("rec_id")
+  
+  
+  def generate_true_links(self,df_all_rec):
+    """ 
+    Function to return all true links
+        
+    """
+    
+    index = df_all_rec.index.to_series()
+    keys = index.str.extract('rec-(\d+)', expand=True)[0]
+
+    index_int = numpy.arange(len(df_all_rec))
+
+    df_helper = pandas.DataFrame({
+        'key': keys,
+        'index': index_int
+    })
+
+    # merge the two frame and make MultiIndex.
+    pairs_df = df_helper.merge(
+        df_helper, on='key'
+    )[['index_x', 'index_y']]
+    pairs_df = pairs_df[pairs_df['index_x'] > pairs_df['index_y']]
+
+    return pandas.MultiIndex(
+        levels=[df_all_rec.index.values, df_all_rec.index.values],
+        codes=[pairs_df['index_x'].values, pairs_df['index_y'].values],
+        names=[None, None],
+        verify_integrity=False)
+  
    
   def write_csv_output(self,output_file,all_rec):
-    """ Write output file """
+    """ 
+    Write output file 
+    
+    Parameters
+    ---------
+    
+    output_file : File path to save generated data
+    all_rec : dictionary with all records generated 
+    
+    """
     # Get all record IDs and shuffle them randomly
 
     all_rec_ids = list(all_rec.keys())  
