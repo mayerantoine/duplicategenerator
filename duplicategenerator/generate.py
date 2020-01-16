@@ -158,6 +158,7 @@ import time
 import utils 
 import os
 import config as cf
+import pandas
 
 # Set this flag to True for verbose output, otherwise to False - - - - - - - -
 #
@@ -172,7 +173,7 @@ VERBOSE_OUTPUT = True
 
 class DataSetGen:
   
-  def __init__(self,output_file,
+  def __init__(self,
              num_org_records,
              num_dup_records,
              max_num_dups,
@@ -181,7 +182,6 @@ class DataSetGen:
              prob_distribution,
              type_modification):
     
-    self.output_file = output_file
     self.num_org_records = num_org_records
     self.num_dup_records = num_dup_records
     self.max_num_dups = max_num_dups
@@ -550,11 +550,19 @@ class DataSetGen:
     """ 
     Function to  create original records 
     
+    The orignal records are created using look-up tables with real values and
+    their frequencies and dependencies or based on specific attribute generation 
+    rules.
+    
     Parameters
     ----------
-    freq_files_length : Total number of values for a frequency file
+    freq_files_length : List of number of values for a  each frequency file
     freq_files : List of list of values for each frequency file
     all_rec_set: Set of all records (without identifier) used for checking that all records are different 
+    
+    Return
+    --------
+    org_rec : Dictionary for original records
     
     """
     
@@ -571,8 +579,7 @@ class DataSetGen:
       #
       for field_dict in cf.field_list:
         field_name = field_dict['name']
-        
-       
+               
         if ((field_name != 'culture') & (random.random() <= field_dict['miss_prob'])):
           rand_val = cf.missing_value
 
@@ -661,7 +668,8 @@ class DataSetGen:
           max_digit = int('9'*field_dict['num_digits'])
           min_digit = int('1'*(int(1+round(field_dict['num_digits']/2.))))
           rand_num = random.randint(min_digit, max_digit)
-          rand_val = area_code+' '+str(rand_num).zfill(field_dict['num_digits'])
+          #rand_val = area_code+' '+str(rand_num).zfill(field_dict['num_digits'])
+          rand_val = area_code+str(rand_num).zfill(field_dict['num_digits'])
 
         elif (field_dict['type'] == 'ident'):  # A identification number field
           rand_num = random.randint(field_dict['start_id'], field_dict['end_id']-1)
@@ -1327,65 +1335,7 @@ class DataSetGen:
 
     return dup_rec ,org_rec_used
 
-  def write_csv_output(self,new_org_rec,dup_rec):
-    """ Write output file """
-    
-    all_rec = new_org_rec  # Merge original and duplicate records
-
-    all_rec_ids = list(all_rec.keys())  # Get all record IDs and shuffle them randomly
-    random.shuffle(all_rec_ids)
-
-    # Make a list of field names and sort them according to column number
-    #
-    field_name_list = ['rec_id']+self.field_names
-
-    # Open output file
-    #
-    try:
-      f_out = open(self.output_file, 'w',encoding="utf8")
-    except:
-      print('Error: Can not write to output file "%s"' % (self.output_file))
-      sys.exit()
-
-    # Write header line - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #
-    if (cf.save_header == True):
-      header_line = ''
-      for field_name in field_name_list:
-        header_line = header_line + field_name+ ', '
-      header_line = header_line[:-2]
-      f_out.write(header_line+os.linesep)
-
-    # Loop over all record IDs
-    #
-    for rec_id in all_rec_ids:
-      rec_dict = all_rec[rec_id]
-      out_line = ''
-      for field_name in field_name_list:
-
-    #    if ((rec_dict.get(field_name, missing_value)).find(blank_value) < 0):
-    #      out_line = out_line + rec_dict.get(field_name, missing_value) + ', '
-    #    else:
-    #      out_line = out_line + ' ' + ', '
-
-        out_line = out_line + rec_dict.get(field_name, cf.missing_value) + ', '
-
-        # To make original and duplicate records align column-wise
-        #
-        if (field_name == 'rec_id') and (out_line[-6:] == '-org, '):
-          out_line += '  '
-
-      # Remove last comma and space and add line separator
-      #
-      out_line = out_line[:-2]
-
-      f_out.write(out_line+os.linesep)
-
-    f_out.close()
-
-    print('End.')
-
-  def run(self) :
+  def generate(self,output="dict") :
     
     # Initialise random number generator  - - - - - - - - - - - - - - - - - - - - -
     #
@@ -1432,11 +1382,72 @@ class DataSetGen:
                                                            freq_files_length,
                                                            freq_files)
     
+    all_rec = new_org_rec  # Merge original and duplicate records
+    
+    if (self.num_dup_records > 0):
+      all_rec.update(dup_rec)
+    
+    if(output == "dict") :
+      return all_rec
+    elif(output == "dataframe"):
+      return pandas.DataFrame(all_rec.values())
+   
+  def write_csv_output(self,output_file,all_rec):
+    """ Write output file """
+    # Get all record IDs and shuffle them randomly
 
-    # WRITE OUTPUT CSV FILE
+    all_rec_ids = list(all_rec.keys())  
+    random.shuffle(all_rec_ids)
 
-    print('Step 3: Write output file')
-    self.write_csv_output(new_org_rec,dup_rec)
+    # Make a list of field names and sort them according to column number
+    #
+    field_name_list = ['rec_id']+self.field_names
+
+    # Open output file
+    #
+    try:
+      f_out = open(output_file, 'w',encoding="utf8")
+    except:
+      print('Error: Can not write to output file "%s"' % (output_file))
+      sys.exit()
+
+    # Write header line - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    #
+    if (cf.save_header == True):
+      header_line = ''
+      for field_name in field_name_list:
+        header_line = header_line + field_name+ ', '
+      header_line = header_line[:-2]
+      f_out.write(header_line+os.linesep)
+
+    # Loop over all record IDs
+    #
+    for rec_id in all_rec_ids:
+      rec_dict = all_rec[rec_id]
+      out_line = ''
+      for field_name in field_name_list:
+
+    #    if ((rec_dict.get(field_name, missing_value)).find(blank_value) < 0):
+    #      out_line = out_line + rec_dict.get(field_name, missing_value) + ', '
+    #    else:
+    #      out_line = out_line + ' ' + ', '
+
+        out_line = out_line + rec_dict.get(field_name, cf.missing_value) + ', '
+
+        # To make original and duplicate records align column-wise
+        #
+        if (field_name == 'rec_id') and (out_line[-6:] == '-org, '):
+          out_line += '  '
+
+      # Remove last comma and space and add line separator
+      #
+      out_line = out_line[:-2]
+
+      f_out.write(out_line+os.linesep)
+
+    f_out.close()
+
+    print('End.')
 
 def main():
   
@@ -1444,8 +1455,8 @@ def main():
   # =============================================================================
   # Start main program
 
-  if (len(sys.argv) != 10):
-    print('Nine arguments needed with %s:' % (sys.argv[0]))
+  if (len(sys.argv) != 9):
+    print('Height arguments needed with %s:' % (sys.argv[0]))
     print('  - Output file name')
     print('  - Number of original records')
     print('  - Number of duplicate records')
@@ -1502,7 +1513,7 @@ def main():
     print('       Must be one of: "typo, "ocr" or "pho" or "all"')
     sys.exit()
 
-  dsgen = DataSetGen(output_file,
+  dsgen = DataSetGen(
            num_org_records,
            num_dup_records,
            max_num_dups,
@@ -1510,7 +1521,11 @@ def main():
            max_num_record_modifi,
            prob_distribution,
            type_modification)
-  dsgen.run()
+  all_records = dsgen.generate()
+  
+  # WRITE CSV OUTPUT
+  
+  dsgen.write_csv_output(output_file,all_records)
 
 if __name__=="__main__":
   main()
