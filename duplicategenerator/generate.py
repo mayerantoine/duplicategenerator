@@ -160,6 +160,7 @@ import os
 import config as cf
 import pandas
 import numpy
+import json
 
 # Set this flag to True for verbose output, otherwise to False - - - - - - - -
 #
@@ -181,7 +182,8 @@ class DataSetGen:
              max_num_field_modifi,
              max_num_record_modifi,
              prob_distribution,
-             type_modification):
+             type_modification,
+             attr_file_name):
     
     self.num_org_records = num_org_records
     self.num_dup_records = num_dup_records
@@ -190,6 +192,11 @@ class DataSetGen:
     self.max_num_record_modifi = max_num_record_modifi
     self.prob_distribution = prob_distribution
     self.type_modification = type_modification
+    self.attr_file_name = attr_file_name
+    self.field_list = list(self._load_attr_configuration('attributes').values())
+    self.single_typo_prob = self._load_attr_configuration("single_typo_prob")
+    self.field_swap_prob = self._load_attr_configuration("field_swap_prob")
+    self.error_type_distribution = self._load_attr_configuration("error_type_distribution")
 
     
     self.field_names = []  # Make a list of all field names
@@ -208,7 +215,8 @@ class DataSetGen:
       # check name , type , char range, select_prob and prob
       # returns select_prob_sum, update field_dict and field_names
       i = 0  # Loop counter
-      for field_dict in cf.field_list:
+      for field_dict in self.field_list:
+       
 
         #  field name
         if ('name' not in field_dict):
@@ -241,14 +249,14 @@ class DataSetGen:
             raise Exception
 
           else:  # Process start and end date
-            start_date = field_dict['start_date']
-            end_date =   field_dict['end_date']
+            start_date = eval(field_dict['start_date'])
+            end_date =   eval(field_dict['end_date'])
 
             start_epoch = utils.date_to_epoch(start_date[0], start_date[1], start_date[2])
             end_epoch =   utils.date_to_epoch(end_date[0], end_date[1], end_date[2])
             field_dict['start_epoch'] = start_epoch
             field_dict['end_epoch'] =   end_epoch
-            cf.field_list[i] = field_dict
+            self.field_list[i] = field_dict
 
         elif (field_dict['type'] == 'phone'):
           if (not ('area_codes' in field_dict and 'num_digits' in field_dict)):
@@ -268,7 +276,7 @@ class DataSetGen:
                     (str(field_dict['num_digits']), type(field_dict['num_digits'])))
               raise Exception
 
-            cf.field_list[i] = field_dict
+            self.field_list[i] = field_dict
 
         elif (field_dict['type'] == 'ident'):
           if (not ('start_id' in field_dict and \
@@ -311,7 +319,7 @@ class DataSetGen:
           prob_sum += field_dict[prob]
 
         field_dict['prob_list'] = prob_list
-        cf.field_list[i] = field_dict  # Store dictionary back into dictionary list
+        self.field_list[i] = field_dict  # Store dictionary back into dictionary list
 
         i += 1
       # end of  fields dictionnaries validation
@@ -464,16 +472,25 @@ class DataSetGen:
         prob_dist_list.append((num_dup, zipf_num[i]+prob_dist_list[-1][1]))
 
     return prob_dist_list
+   
+  def _load_attr_configuration(self,type="attributes"):
+    # check if file exist
     
+    #check config folder if not
+    with open(self.attr_file_name,"r") as json_file:
+       attr_data = json.load(json_file)
+    return attr_data[type]
+     
+   
   def _load_frequency_lookup_tables(self):
     """ Load frequency files and misspellings dictionaries """
-      
+ 
     freq_files = {}
     freq_files_length = {}
 
     i = 0  # Loop counter
     # import freq file , misspell file and lookup file
-    for field_dict in cf.field_list:
+    for field_dict in self.field_list:
       field_name = field_dict['name']
 
       # import freq file, shuffle data and return data in a list
@@ -540,7 +557,7 @@ class DataSetGen:
                 % (field_dict['name'], lookup_file_name))
           print()
 
-        cf.field_list[i] = field_dict  # Store dictionary back into dictionary list
+        self.field_list[i] = field_dict  # Store dictionary back into dictionary list
 
       i += 1
 
@@ -578,7 +595,7 @@ class DataSetGen:
 
       # Now randomly create all the fields in a record  - - - - - - - - - - - - - -
       #
-      for field_dict in cf.field_list:
+      for field_dict in self.field_list:
         field_name = field_dict['name']
                
         if ((field_name != 'culture') & (random.random() <= field_dict['miss_prob'])):
@@ -792,7 +809,7 @@ class DataSetGen:
           # Set the field modification counters to zero for all fields
           #
           field_mod_count_dict = {}
-          for field_dict in cf.field_list:
+          for field_dict in self.field_list:
             field_mod_count_dict[field_dict['name']] = 0
 
           # Do random swapping between fields if two or more modifications in
@@ -1365,7 +1382,7 @@ class DataSetGen:
     select_prob_list = []
     prob_sum =  0.0
 
-    for field_dict in cf.field_list:
+    for field_dict in self.field_list:
       select_prob_list.append((field_dict, prob_sum))
       prob_sum += field_dict['select_prob']
 
@@ -1406,8 +1423,7 @@ class DataSetGen:
       return all_rec
     elif(output == "dataframe"):
       return pandas.DataFrame(all_rec.values()).set_index("rec_id")
-  
-  
+    
   def generate_true_links(self,df_all_rec):
     """ 
     Function to return all true links
@@ -1435,8 +1451,7 @@ class DataSetGen:
         codes=[pairs_df['index_x'].values, pairs_df['index_y'].values],
         names=[None, None],
         verify_integrity=False)
-  
-   
+     
   def write_csv_output(self,output_file,all_rec):
     """ 
     Write output file 
@@ -1582,4 +1597,9 @@ def main():
   dsgen.write_csv_output(output_file,all_records)
 
 if __name__=="__main__":
-  main()
+  #main()
+   dsgen = DataSetGen(10,10,1,1,1,"uniform","all",'./config/attr_config_file.uganda.json')
+   df = dsgen.generate("dataframe")
+   df_true = dsgen.generate_true_links(df)
+   print(df)
+   

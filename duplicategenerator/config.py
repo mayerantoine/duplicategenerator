@@ -553,8 +553,7 @@ blocking_dict = {'name':'blocking_number',
 # Use field names as defined in the field directories (keys 'name').
 #
 field_swap_prob = {('address_1',  'address_2'):0.02,
-                   ('given_name', 'surname'):  0.05,
-                   ('postcode',   'suburb'):   0.01}
+                   ('given_name', 'surname'):  0.05}
 
 # -----------------------------------------------------------------------------
 # Probabilities (between 0.0 and 1.0) for creating a typographical error (a new
@@ -596,26 +595,6 @@ blank_value = ' '
 #
 current_year = time.localtime()[0]  # Alternatively set manual
 
-# -----------------------------------------------------------------------------
-# Household freq files
-#
-household_freq_dict = {'age' : 'data'+os.sep+'household-age-freq.csv',
-                       'sex' : 'data'+os.sep+'household-sex-freq.csv'}
-
-# -----------------------------------------------------------------------------
-# Distribution of the number of household and family records to be generated
-#
-household_prob = 0.4
-family_prob    = 0.6
-
-# -----------------------------------------------------------------------------
-# List of fields that are not modified when family or household records are
-# generated
-#
-household_field_list =  ['street_number','address_1','address_2','suburb',
-                         'postcode','state','phone_number']
-family_field_list    =  ['surname','street_number','address_1','address_2',
-                         'suburb','postcode','state','phone_number']
 
 # -----------------------------------------------------------------------------
 # Error type distribution
