@@ -266,6 +266,7 @@ def epoch_to_date(daynum):
 def date_to_epoch(day, month, year):
   """ Convert a date [day, month, year] into an epoch day number.
      (based on a function from the 'normalDate.py' module by Jeff Bauer, see:
+     
      http://starship.python.net/crew/jbauer/normalDate/)
 
   USAGE:

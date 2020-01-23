@@ -173,7 +173,7 @@ VERBOSE_OUTPUT = True
 
 
 
-class DataSetGen:
+class DatasetGen:
   
   def __init__(self,
              num_org_records,
@@ -183,7 +183,9 @@ class DataSetGen:
              max_num_record_modifi,
              prob_distribution,
              type_modification,
-             attr_file_name,
+             culture = None,
+             attr_file_name = None,
+             field_names = None,
              attr_list = None):
     
     self.num_org_records = num_org_records
@@ -193,17 +195,44 @@ class DataSetGen:
     self.max_num_record_modifi = max_num_record_modifi
     self.prob_distribution = prob_distribution
     self.type_modification = type_modification
+    
+    
+    # if none all culture
+    # culture should be ISO format
+    # list of counttry supported 
+    # if culture is not there should provide warning
+    self.culture = culture
+    
+    # if filename is none use default file
+    # have to check if filename exist 
+    # have to check file name format json
     self.attr_file_name = attr_file_name
-    self.field_list = list(self._load_attr_configuration('attributes').values())
+
     self.single_typo_prob = self._load_attr_configuration("single_typo_prob")
     self.field_swap_prob = self._load_attr_configuration("field_swap_prob")
     self.error_type_distribution = self._load_attr_configuration("error_type_distribution")
-
     
-    self.field_names = []  # Make a list of all field names
+    self.field_list = []
+     
+    # If field_name is None what about attribute with no probabiities 
+    # Check the name in field_names are valid
+    # culture is mandatory
+      
+    if(field_names is None):
+      self.field_names = []  # Make a list of all field names
+      self.field_list = list(self._load_attr_configuration('attributes').values())
+    else: 
+      self.field_names = field_names
+      for field_dict in list(self._load_attr_configuration('attributes').values()):
+        for field in self.field_names:
+          if(field_dict['name'] == field):
+            self.field_list.append(field_dict)
+     
 
   def _validate_and_sum_prob(self)  :
       """ Check all user options within generate.py for validity  """
+            
+          
             
       # A list of all probabilities to check ('select_prob' is checked separately)
       prob_names = ['ins_prob','del_prob','sub_prob','trans_prob','val_swap_prob',
@@ -216,8 +245,9 @@ class DataSetGen:
       # check name , type , char range, select_prob and prob
       # returns select_prob_sum, update field_dict and field_names
       i = 0  # Loop counter
+
       for field_dict in self.field_list:
-       
+         
 
         #  field name
         if ('name' not in field_dict):
@@ -603,9 +633,10 @@ class DataSetGen:
           rand_val = cf.missing_value
 
         elif (field_dict['type'] == 'freq'):  # A frequency file based field
-
-          if(field_name == 'culture') :
-            rand_val = 'uga'
+          
+          # pass the culture parameter 
+          if( (field_name == 'culture') & (self.culture is not None)) :
+            rand_val = self.culture
           else:
             rand_num = random.randint(0, freq_files_length[field_name]-1)
             rand_val = freq_files[field_name][rand_num]
@@ -1604,8 +1635,14 @@ if __name__=="__main__":
   #main()
   
   # Test code
-   dsgen = DataSetGen(100,100,1,1,1,"uniform","all",'./config/attr_config_file.uganda.json')
+   #dsgen = DataSetGen(10,10,1,1,1,"uniform","all",
+   #                   './config/attr_config_file.uganda.json',
+   #                   ['culture','sex','date_of_birth','given_name','surname',
+   #                    'phone_number','national_identifier'])
+   
+   dsgen = DatasetGen(10,10,1,1,1,"uniform","all",'fra','./config/attr_config_file.example.json')
    df = dsgen.generate("dataframe")
    df_true = dsgen.generate_true_links(df)
    print(df)
+   print(df.columns)
    
