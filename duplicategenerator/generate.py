@@ -183,7 +183,8 @@ class DataSetGen:
              max_num_record_modifi,
              prob_distribution,
              type_modification,
-             attr_file_name):
+             attr_file_name,
+             attr_list = None):
     
     self.num_org_records = num_org_records
     self.num_dup_records = num_dup_records
@@ -760,7 +761,7 @@ class DataSetGen:
                                         # distribution given in parameter
                                         # 'error_type_distribution'
           list_type_of_error = []
-          for error_type in cf.error_type_distribution:
+          for error_type in self.error_type_distribution:
             list_type_of_error += [error_type] * int(cf.error_type_distribution[error_type]*100)
           type_modification_to_apply = random.choice(list_type_of_error)
 
@@ -822,14 +823,17 @@ class DataSetGen:
               # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
               # Random swapping of values between a pair of field values
               #
-              field_swap_pair_list = list(cf.field_swap_prob.keys())
+              field_swap_pair_list = list(self.field_swap_prob.keys())
               random.shuffle(field_swap_pair_list)
 
               for field_pair in field_swap_pair_list:
-
-                if (random.random() <= cf.field_swap_prob[field_pair]) and \
+                
+        
+                if (random.random() <= self.field_swap_prob[field_pair]) and \
                   (num_modif_in_record <= (self.max_num_record_modifi-2)):
 
+                  # convert to tuple
+                  field_pair  = eval(field_pair)
                   fname_a, fname_b = field_pair
 
                   # Make sure both fields are in the record dictionary
@@ -1598,7 +1602,9 @@ def main():
 
 if __name__=="__main__":
   #main()
-   dsgen = DataSetGen(10,10,1,1,1,"uniform","all",'./config/attr_config_file.uganda.json')
+  
+  # Test code
+   dsgen = DataSetGen(100,100,1,1,1,"uniform","all",'./config/attr_config_file.uganda.json')
    df = dsgen.generate("dataframe")
    df_true = dsgen.generate_true_links(df)
    print(df)

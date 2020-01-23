@@ -1,6 +1,6 @@
 {
   "attributes": {
-    "givenname": {
+    "given_name": {
       "name": "given_name",
       "type": "freq",
       "char_range": "alpha",
@@ -54,7 +54,7 @@
       "ocr_ins_sp_prob": 0.03,
       "ocr_del_sp_prob": 0.03
     },
-    "streetnumber": {
+    "street_number": {
       "name": "street_number",
       "type": "freq",
       "char_range": "digit",
@@ -76,7 +76,7 @@
       "ocr_ins_sp_prob": 0.03,
       "ocr_del_sp_prob": 0.03
     },
-    "address1": {
+    "address_1": {
       "name": "address_1",
       "type": "freq",
       "char_range": "alpha",
@@ -98,7 +98,7 @@
       "ocr_ins_sp_prob": 0.03,
       "ocr_del_sp_prob": 0.03
     },
-    "address2": {
+    "address_2": {
       "name": "address_2",
       "type": "freq",
       "char_range": "alpha",
@@ -142,7 +142,7 @@
       "ocr_ins_sp_prob": 0.03,
       "ocr_del_sp_prob": 0.03
     },
-    "dob": {
+    "date_of_birth": {
       "name": "date_of_birth",
       "type": "date",
       "char_range": "digit",
@@ -209,7 +209,7 @@
       "ocr_ins_sp_prob": 0.03,
       "ocr_del_sp_prob": 0.03
     },
-    "phonenumber": {
+    "phone_number": {
       "name": "phone_number",
       "type": "phone",
       "char_range": "digit",
@@ -262,7 +262,7 @@
       "ocr_ins_sp_prob": 0.03,
       "ocr_del_sp_prob": 0.03
     },
-    "blocking_dict": {
+    "blocking_number": {
       "name": "blocking_number",
       "type": "ident",
       "char_range": "digit",
