@@ -1,0 +1,3 @@
+from duplicategenerator.generate import DuplicateGen
+import duplicategenerator.utils
+import duplicategenerator.config

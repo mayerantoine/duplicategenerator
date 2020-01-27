@@ -173,7 +173,7 @@ VERBOSE_OUTPUT = True
 
 
 
-class DatasetGen:
+class DuplicateGen:
   
   def __init__(self,
              num_org_records,
@@ -205,7 +205,7 @@ class DatasetGen:
     
     # if filename is none use default file
     # have to check if filename exist 
-    # have to check file name format json
+    # have to check file format json
     self.attr_file_name = attr_file_name
 
     self.single_typo_prob = self._load_attr_configuration("single_typo_prob")
@@ -528,6 +528,9 @@ class DatasetGen:
       if (field_dict['type'] == 'freq'):  # Check for 'freq' field type
 
         file_name = field_dict['freq_file']  # Get the corresponding file name   
+        this_dir, this_filename = os.path.split(__file__)
+        file_name = os.path.join(this_dir, "data", file_name)
+        
         if (file_name != None):
           try:
             fin = open(file_name)  # Open file for reading
@@ -571,6 +574,10 @@ class DatasetGen:
       # import misspell file,  return a dict
       if ('misspell_file' in field_dict):  # Load misspellings dictionary file
         misspell_file_name = field_dict['misspell_file']
+        
+        this_dir, this_filename = os.path.split(__file__)
+        misspell_file_name = os.path.join(this_dir, "data", misspell_file_name)
+
         field_dict['misspell_dict'] = utils.load_misspellings_dict(misspell_file_name)
 
         if (VERBOSE_OUTPUT == True):
@@ -581,6 +588,10 @@ class DatasetGen:
       # import lookup_file,  and return data lookup dict
       if ('lookup_file' in field_dict):  # Load lookup dictionary file
         lookup_file_name = field_dict['lookup_file']
+        
+        this_dir, this_filename = os.path.split(__file__)
+        lookup_file_name = os.path.join(this_dir, "data", lookup_file_name)
+        
         field_dict['lookup_dict'] = utils.load_lookup_dict(lookup_file_name)
 
         if (VERBOSE_OUTPUT == True):
@@ -1640,9 +1651,9 @@ if __name__=="__main__":
    #                   ['culture','sex','date_of_birth','given_name','surname',
    #                    'phone_number','national_identifier'])
    
-   dsgen = DatasetGen(10,10,1,1,1,"uniform","all",'fra','./config/attr_config_file.example.json')
-   df = dsgen.generate("dataframe")
-   df_true = dsgen.generate_true_links(df)
+   dupgen = DuplicateGen(10,10,1,1,1,"uniform","all",'fra','./config/attr_config_file.example.json')
+   df = dupgen.generate("dataframe")
+   df_true = dupgen.generate_true_links(df)
    print(df)
    print(df.columns)
    

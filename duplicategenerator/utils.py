@@ -18,6 +18,10 @@ days_in_month = [[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31], \
 single_typo_prob = {'same_row':0.40,
                     'same_col':0.30}
 
+# ---------------------------------------------------------------
+ocr_rules_file = "lib_ocr_rules.txt"
+phonetic_rules_file = "lib_phonetic_rules.txt"
+
 
 # =============================================================================
 # Functions used by the main program come here
@@ -869,11 +873,17 @@ def get_transformation(s, t):
   # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
   # Load the replacement table
+ 
+  this_dir, this_filename = os.path.split(__file__)
+ 
+  
   if (t == 'pho'):
-    replace_table_file_name= 'config'+os.sep+'lib_phonetic_rules.txt'
+  # replace_table_file_name= 'config'+os.sep+'lib_phonetic_rules.txt'
+    replace_table_file_name= os.path.join(this_dir, "config",phonetic_rules_file )
 
   elif (t == 'ocr'):
-    replace_table_file_name= 'config'+os.sep+'lib_ocr_rules.txt'
+   #replace_table_file_name= 'config'+os.sep+'lib_ocr_rules.txt'
+    replace_table_file_name = os.path.join(this_dir, "config", ocr_rules_file)
 
   try:
     f=open(replace_table_file_name,'r')
