@@ -875,8 +875,7 @@ def get_transformation(s, t):
   # Load the replacement table
  
   this_dir, this_filename = os.path.split(__file__)
- 
-  
+   
   if (t == 'pho'):
   # replace_table_file_name= 'config'+os.sep+'lib_phonetic_rules.txt'
     replace_table_file_name= os.path.join(this_dir, "config",phonetic_rules_file )

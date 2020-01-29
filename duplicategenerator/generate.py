@@ -155,16 +155,17 @@ import random
 import string
 import sys
 import time
-import utils 
 import os
-import config as cf
 import pandas
 import numpy
 import json
 
-# Set this flag to True for verbose output, otherwise to False - - - - - - - -
-#
-VERBOSE_OUTPUT = True
+from duplicategenerator import utils 
+from duplicategenerator import config as cf
+
+
+#import utils
+#import config as cf
 
 
 # =============================================================================
@@ -183,10 +184,11 @@ class DuplicateGen:
              max_num_record_modifi,
              prob_distribution,
              type_modification,
+             verbose_output = False, 
              culture = None,
              attr_file_name = None,
-             field_names = None,
-             attr_list = None):
+             field_names = None):
+    self.VERBOSE_OUTPUT = verbose_output
     
     self.num_org_records = num_org_records
     self.num_dup_records = num_dup_records
@@ -505,7 +507,11 @@ class DuplicateGen:
     return prob_dist_list
    
   def _load_attr_configuration(self,type="attributes"):
+    
     # check if file exist
+    #this_dir, this_filename = os.path.split(__file__)
+    #this_attr_file_name = os.path.join(this_dir, "config", self.attr_file_name)
+    #print(this_attr_file_name)
     
     #check config folder if not
     with open(self.attr_file_name,"r") as json_file:
@@ -559,7 +565,7 @@ class DuplicateGen:
           freq_files[field_name] = value_list
           freq_files_length[field_name] = len(value_list)
 
-          if (VERBOSE_OUTPUT == True):
+          if (self.VERBOSE_OUTPUT == True):
             print('  Loaded frequency file for field "%s" from file: %s' % \
                   (field_dict['name'], file_name))
             print()
@@ -580,7 +586,7 @@ class DuplicateGen:
 
         field_dict['misspell_dict'] = utils.load_misspellings_dict(misspell_file_name)
 
-        if (VERBOSE_OUTPUT == True):
+        if (self.VERBOSE_OUTPUT == True):
           print('  Loaded misspellings dictionary for field "%s" from file: "%s' \
                 % (field_dict['name'], misspell_file_name))
           print()
@@ -594,7 +600,7 @@ class DuplicateGen:
         
         field_dict['lookup_dict'] = utils.load_lookup_dict(lookup_file_name)
 
-        if (VERBOSE_OUTPUT == True):
+        if (self.VERBOSE_OUTPUT == True):
           print('  Loaded lookup dictionary for field "%s" from file: "%s' \
                 % (field_dict['name'], lookup_file_name))
           print()
@@ -766,7 +772,7 @@ class DuplicateGen:
 
         # Print original record - - - - - - - - - - - - - - - - - - - - - - - - - -
         #
-        if (VERBOSE_OUTPUT == True):
+        if (self.VERBOSE_OUTPUT == True):
           print('  Original:')
           print('    Record ID         : %-30s' % (rec_dict['rec_id']))
           for field_name in self.field_names:
@@ -774,7 +780,7 @@ class DuplicateGen:
           print()
 
       else:
-        if (VERBOSE_OUTPUT == True):
+        if (self.VERBOSE_OUTPUT == True):
           print('***** Record "%s" already created' % (rec_str))
     # end of loop for orinal records
 
@@ -824,7 +830,7 @@ class DuplicateGen:
         #
         num_dups = utils.random_select(prob_dist_list)
 
-        if (VERBOSE_OUTPUT == True):
+        if (self.VERBOSE_OUTPUT == True):
           print('  Use record %s to create %i duplicates' % (org_rec_id, num_dups))
           print()
 
@@ -836,7 +842,7 @@ class DuplicateGen:
         #
         while (d < num_dups) and (rec_cnt < self.num_dup_records):
 
-          if (VERBOSE_OUTPUT == True):
+          if (self.VERBOSE_OUTPUT == True):
             print('  Generate duplicate %d:' % (d+1))
 
           # Create a duplicate of the original record
@@ -892,7 +898,7 @@ class DuplicateGen:
                     field_mod_count_dict[fname_a] = field_mod_count_dict[fname_a]+1
                     field_mod_count_dict[fname_b] = field_mod_count_dict[fname_b]+1
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    Swapped fields "%s" and "%s": "%s" <-> "%s"' % \
                           (fname_a, fname_b, fvalue_a, fvalue_b))
 
@@ -967,7 +973,7 @@ class DuplicateGen:
                   else:  # Randomly choose a value
                     dup_field_val = random.choice(misspell_list)
 
-                  if (VERBOSE_OUTPUT == True):
+                  if (self.VERBOSE_OUTPUT == True):
                     print('    Exchanged value "%s" in field "%s" with "%s"' % \
                           (old_field_val, field_name, dup_field_val) + \
                           ' from misspellings dictionary')
@@ -1002,7 +1008,7 @@ class DuplicateGen:
                     dup_field_val = str(rand_num)
 
                   if (dup_field_val != old_field_val):
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    Exchanged value in field "%s": "%s" -> "%s"' % \
                             (field_name, old_field_val, dup_field_val))
 
@@ -1013,7 +1019,7 @@ class DuplicateGen:
 
                   dup_field_val = cf.missing_value  # Set to a missing value
 
-                  if (VERBOSE_OUTPUT == True):
+                  if (self.VERBOSE_OUTPUT == True):
                     print('    Set field "%s" to missing value: "%s" -> "%s"' % \
                             (field_name, old_field_val, dup_field_val))
 
@@ -1040,7 +1046,7 @@ class DuplicateGen:
                   dup_field_val = ' '.join(word_list)
 
                   if (dup_field_val != old_field_val):
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    Swapped words in field "%s": "%s" -> "%s"' % \
                           (field_name, old_field_val, dup_field_val))
 
@@ -1073,7 +1079,7 @@ class DuplicateGen:
                                             field_dict['end_id']-1)
                     dup_field_val = str(rand_num)
 
-                  if (VERBOSE_OUTPUT == True):
+                  if (self.VERBOSE_OUTPUT == True):
                     print('    Exchanged missing value ' + \
                           '"%s" in field "%s" with "%s"' % \
                           (cf.missing_value, field_name, dup_field_val))
@@ -1098,7 +1104,7 @@ class DuplicateGen:
                     if (new_field_val != dup_field_val):
                       dup_field_val = new_field_val
 
-                      if (VERBOSE_OUTPUT == True):
+                      if (self.VERBOSE_OUTPUT == True):
                         print('    Substituted character ' + \
                               '"%s" with "%s" in field ' % \
                               (old_char, new_char) + '"%s": "%s" -> "%s"' % \
@@ -1118,7 +1124,7 @@ class DuplicateGen:
                     dup_field_val = dup_field_val[:rand_ins_pos] + rand_char + \
                                   dup_field_val[rand_ins_pos:]
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    Inserted char ' + \
                             '"%s" into field "%s": "%s" -> "%s"' % \
                             (rand_char, field_name, old_field_val, dup_field_val))
@@ -1138,7 +1144,7 @@ class DuplicateGen:
                   dup_field_val = dup_field_val[:rand_del_pos] + \
                                   dup_field_val[rand_del_pos+1:]
 
-                  if (VERBOSE_OUTPUT == True):
+                  if (self.VERBOSE_OUTPUT == True):
                     print('    Deleted character ' + \
                           '"%s" in field "%s": "%s" -> "%s"' % \
                           (del_char, field_name, old_field_val, dup_field_val))
@@ -1162,7 +1168,7 @@ class DuplicateGen:
                   if (new_field_val != dup_field_val):
                     dup_field_val = new_field_val
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    Transposed characters "%s" in field "%s": "%s"'\
                             % (trans_chars, field_name, old_field_val) + \
                             '-> "%s"' % (dup_field_val))
@@ -1189,7 +1195,7 @@ class DuplicateGen:
                   if (new_field_val != dup_field_val):
                     dup_field_val = new_field_val
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    Inserted space " " into field ' + \
                             '"%s": "%s" -> "%s"' % \
                             (field_name, old_field_val, dup_field_val))
@@ -1219,7 +1225,7 @@ class DuplicateGen:
                   if (new_field_val != dup_field_val):
                     dup_field_val = new_field_val
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    Deleted space " " from field ' + \
                             '"%s": "%s" -> "%s"' % \
                             (field_name, old_field_val, dup_field_val))
@@ -1241,7 +1247,7 @@ class DuplicateGen:
                     if (ch != ''):
                       dup_field_val = utils.apply_change(old_field_val, ch)
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    Phonetic modification ' + \
                             '"%s" in field "%s": "%s" -> "%s"' % \
                             (ch, field_name, old_field_val, dup_field_val))
@@ -1262,7 +1268,7 @@ class DuplicateGen:
                     if (ch != ''):
                       dup_field_val = utils.apply_change(old_field_val, ch)
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    OCR modification  "%s" from field "%s": "%s" -> "%s"' %  (ch, field_name, old_field_val, dup_field_val))
 
                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1281,7 +1287,7 @@ class DuplicateGen:
                   dup_field_val = dup_field_val[:rand_del_pos] + ' ' + \
                                 dup_field_val[rand_del_pos+1:]
 
-                  if (VERBOSE_OUTPUT == True):
+                  if (self.VERBOSE_OUTPUT == True):
                     print('    OCR Failure character ' + \
                           '"%s" in field "%s": "%s" -> "%s"' % \
                           (del_char, field_name, old_field_val, dup_field_val))
@@ -1308,7 +1314,7 @@ class DuplicateGen:
                   if (new_field_val != dup_field_val):
                     dup_field_val = new_field_val
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    OCR Inserted space " " into field ' + \
                             '"%s": "%s" -> "%s"' % \
                             (field_name, old_field_val, dup_field_val))
@@ -1339,7 +1345,7 @@ class DuplicateGen:
                   if (new_field_val != dup_field_val):
                     dup_field_val = new_field_val
 
-                    if (VERBOSE_OUTPUT == True):
+                    if (self.VERBOSE_OUTPUT == True):
                       print('    OCR Deleted space " " from field ' +\
                             '"%s": "%s" -> "%s"' % \
                             (field_name, old_field_val, dup_field_val))
@@ -1381,7 +1387,7 @@ class DuplicateGen:
 
             # Print original and duplicate records field by field - - - - - - - - -
             #
-            if (VERBOSE_OUTPUT == True):
+            if (self.VERBOSE_OUTPUT == True):
               print('  Original and duplicate records:')
               print('    Number of modifications in record: %d' % \
                     (num_modif_in_record))
@@ -1394,11 +1400,11 @@ class DuplicateGen:
               print()
 
           else:
-            if (VERBOSE_OUTPUT == True):
+            if (self.VERBOSE_OUTPUT == True):
               print('  No random modifications for record "%s" -> Choose another' \
                     % (dup_rec_id))
 
-          if (VERBOSE_OUTPUT == True):
+          if (self.VERBOSE_OUTPUT == True):
             print()
 
     return dup_rec ,org_rec_used
@@ -1498,160 +1504,18 @@ class DuplicateGen:
         names=[None, None],
         verify_integrity=False)
      
-  def write_csv_output(self,output_file,all_rec):
-    """ 
-    Write output file 
-    
-    Parameters
-    ---------
-    
-    output_file : File path to save generated data
-    all_rec : dictionary with all records generated 
-    
-    """
-    # Get all record IDs and shuffle them randomly
-
-    all_rec_ids = list(all_rec.keys())  
-    random.shuffle(all_rec_ids)
-
-    # Make a list of field names and sort them according to column number
-    #
-    field_name_list = ['rec_id']+self.field_names
-
-    # Open output file
-    #
-    try:
-      f_out = open(output_file, 'w',encoding="utf8")
-    except:
-      print('Error: Can not write to output file "%s"' % (output_file))
-      sys.exit()
-
-    # Write header line - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    #
-    if (cf.save_header == True):
-      header_line = ''
-      for field_name in field_name_list:
-        header_line = header_line + field_name+ ', '
-      header_line = header_line[:-2]
-      f_out.write(header_line+os.linesep)
-
-    # Loop over all record IDs
-    #
-    for rec_id in all_rec_ids:
-      rec_dict = all_rec[rec_id]
-      out_line = ''
-      for field_name in field_name_list:
-
-    #    if ((rec_dict.get(field_name, missing_value)).find(blank_value) < 0):
-    #      out_line = out_line + rec_dict.get(field_name, missing_value) + ', '
-    #    else:
-    #      out_line = out_line + ' ' + ', '
-
-        out_line = out_line + rec_dict.get(field_name, cf.missing_value) + ', '
-
-        # To make original and duplicate records align column-wise
-        #
-        if (field_name == 'rec_id') and (out_line[-6:] == '-org, '):
-          out_line += '  '
-
-      # Remove last comma and space and add line separator
-      #
-      out_line = out_line[:-2]
-
-      f_out.write(out_line+os.linesep)
-
-    f_out.close()
-
-    print('End.')
-
-def main():
   
- 
-  # =============================================================================
-  # Start main program
-
-  if (len(sys.argv) != 9):
-    print('Height arguments needed with %s:' % (sys.argv[0]))
-    print('  - Output file name')
-    print('  - Number of original records')
-    print('  - Number of duplicate records')
-    print('  - Maximal number of duplicate records for one original record')
-    print('  - Maximum number of modifications per field')
-    print('  - Maximum number of modifications per record')
-    print('  - Probability distribution for duplicates (uniform, poisson, zipf)')
-    print('  - Type of modification (typo, ocr, phonetic, all)')
-    print('All other parameters have to be set within the code')
-    sys.exit()
-
-  output_file =           sys.argv[1]
-  num_org_records =       int(sys.argv[2])
-  num_dup_records =       int(sys.argv[3])
-  max_num_dups =          int(sys.argv[4])
-  max_num_field_modifi =  int(sys.argv[5])
-  max_num_record_modifi = int(sys.argv[6])
-  prob_distribution =     sys.argv[7][:3]
-  type_modification =     sys.argv[8][:3]
-
-
-  if (num_org_records <= 0):
-    print('Error: Number of original records must be positive')
-    sys.exit()
-
-  if (num_dup_records < 0):
-    print('Error: Number of duplicate records must be zero or positive')
-    sys.exit()
-
-  if (max_num_dups <= 0) or (max_num_dups > 9):
-    print('Error: Maximal number of duplicates per record must be positive and less than 10')
-    sys.exit()
-
-  if (max_num_field_modifi <= 0):
-    print('Error: Maximal number of modifications per field must be positive')
-    sys.exit()
-
-  if (max_num_record_modifi <= 0):
-    print('Error: Maximal number of modifications per record must be positive')
-    sys.exit()
-
-  if (max_num_record_modifi < max_num_field_modifi):
-    print('Error: Maximal number of modifications per record must be equal to')
-    print('       or larger than maximal number of modifications per field')
-    sys.exit()
-
-  if (prob_distribution not in ['uni', 'poi', 'zip']):
-    print('Error: Illegal probability distribution: %s' % (sys.argv[7]))
-    print('       Must be one of: "uniform", "poisson", or "zipf"')
-    sys.exit()
-
-  if (type_modification not in ['typ', 'ocr', 'pho', 'all']):
-    print('Error: Illegal type of modification: %s' % (sys.argv[8]))
-    print('       Must be one of: "typo, "ocr" or "pho" or "all"')
-    sys.exit()
-
-  dsgen = DataSetGen(
-           num_org_records,
-           num_dup_records,
-           max_num_dups,
-           max_num_field_modifi,
-           max_num_record_modifi,
-           prob_distribution,
-           type_modification)
-  all_records = dsgen.generate()
-  
-  # WRITE CSV OUTPUT
-  
-  dsgen.write_csv_output(output_file,all_records)
 
 if __name__=="__main__":
   #main()
   
   # Test code
-   #dsgen = DataSetGen(10,10,1,1,1,"uniform","all",
+   #dsgen = DuplicateGen(10,10,1,1,1,"uniform","all", False, None,
    #                   './config/attr_config_file.uganda.json',
    #                   ['culture','sex','date_of_birth','given_name','surname',
    #                    'phone_number','national_identifier'])
    
-   dupgen = DuplicateGen(10,10,1,1,1,"uniform","all",'fra','./config/attr_config_file.example.json')
+   dupgen = DuplicateGen(10,10,1,1,1,"uniform","all",False,None,'./config/attr_config_file.example.json',None)
    df = dupgen.generate("dataframe")
    df_true = dupgen.generate_true_links(df)
    print(df)
