@@ -164,18 +164,8 @@ from duplicategenerator import utils
 from duplicategenerator import config as cf
 
 
-#import utils
-#import config as cf
-
-
-# =============================================================================
-# Nothing to be changed below here
-# =============================================================================
-
-
-
 class DuplicateGen:
-  
+    
   def __init__(self,
              num_org_records,
              num_dup_records,
@@ -188,8 +178,7 @@ class DuplicateGen:
              culture = None,
              attr_file_name = None,
              field_names = None):
-    self.VERBOSE_OUTPUT = verbose_output
-    
+       
     self.num_org_records = num_org_records
     self.num_dup_records = num_dup_records
     self.max_num_dups = max_num_dups
@@ -198,6 +187,7 @@ class DuplicateGen:
     self.prob_distribution = prob_distribution
     self.type_modification = type_modification
     
+    self.VERBOSE_OUTPUT = verbose_output
     
     # if none all culture
     # culture should be ISO format
@@ -205,8 +195,6 @@ class DuplicateGen:
     # if culture is not there should provide warning
     self.culture = culture
     
-    # if filename is none use default file
-    # have to check if filename exist 
     # have to check file format json
     self.attr_file_name = attr_file_name
 
@@ -214,22 +202,131 @@ class DuplicateGen:
     self.field_swap_prob = self._load_attr_configuration("field_swap_prob")
     self.error_type_distribution = self._load_attr_configuration("error_type_distribution")
     
+    self.field_names = field_names
+    
+    # set field_list based on field_names
     self.field_list = []
      
     # If field_name is None what about attribute with no probabiities 
     # Check the name in field_names are valid
-    # culture is mandatory
-      
+    # culture is mandatory or if not all, order is important
+    # check (max_num_record_modifi < max_num_field_modifi):
     if(field_names is None):
-      self.field_names = []  # Make a list of all field names
       self.field_list = list(self._load_attr_configuration('attributes').values())
     else: 
-      self.field_names = field_names
       for field_dict in list(self._load_attr_configuration('attributes').values()):
         for field in self.field_names:
           if(field_dict['name'] == field):
             self.field_list.append(field_dict)
-     
+  
+  @property
+  def num_org_records(self):
+    return self._num_org_records
+  
+  @num_org_records.setter
+  def num_org_records(self,value):
+    if (value <= 0):
+      raise ValueError('Number of original records must be positive')
+    self._num_org_records = value
+  
+  @property
+  def num_dup_records(self):
+    return self._num_dup_records
+  
+  @num_dup_records.setter
+  def num_dup_records(self,value):
+    if (value <= 0):
+      raise ValueError('Number of duplicate records must be zero or positive')
+    self._num_dup_records = value  
+   
+  @property
+  def attr_file_name(self):
+    return self._attr_file_name
+   
+      
+  @attr_file_name.setter
+  def attr_file_name(self,value):
+    if (value is not None) :
+      if(not os.path.exists(value)):
+        raise ValueError("Cannot find configuration attributes file.File do not exist!")
+    self._attr_file_name = value
+        
+        
+  @property
+  def max_num_dups(self):
+    return self._max_num_dups
+  
+  
+  @max_num_dups.setter
+  def max_num_dups(self,value):
+    if (value <= 0) or (value > 9):
+      raise ValueError('Maximal number of duplicates per record must be positive and less than 10')
+    self._max_num_dups = value
+  
+  
+  @property
+  def max_num_record_modifi(self):
+    return self._max_num_record_modifi
+  
+  
+  @max_num_record_modifi.setter
+  def max_num_record_modifi(self,value):
+    if (value <= 0):
+      raise ValueError('Maximal number of modifications per record must be positive')
+    self._max_num_record_modifi = value
+  
+  
+  @property
+  def max_num_field_modifi(self):
+    return self._max_num_field_modifi
+  
+  
+  @max_num_field_modifi.setter
+  def max_num_field_modifi(self,value):
+    if (value <= 0):
+      raise ValueError('Maximal number of modifications per field must be positive')
+    self._max_num_field_modifi = value
+   
+  
+  @property
+  def prob_distribution(self):
+    return self._prob_distribution
+  
+  
+  @prob_distribution.setter
+  def prob_distribution(self,value):
+    if (value not in ['uni', 'poi', 'zip','uniform', 'poisson','zipf']):
+      raise ValueError('Illegal probability distribution must be one of: uniform, poisson, or zipf')
+    self._prob_distribution = value            
+  
+  
+  @property
+  def type_modification(self):
+    return self._type_modification                     
+
+
+  @type_modification.setter
+  def type_modification(self,value):
+    if (value not in ['typ', 'ocr', 'pho', 'all']):
+      raise ValueError('Illegal type of modification must be one of: "typo, "ocr" or "pho" or "all"')
+    self._type_modification = value                        
+                                                       
+  
+  @property
+  def field_names(self):
+    return self._field_names
+  
+  @field_names.setter
+  def field_names(self,value):
+    if (value is None):
+      names = []
+      for field_dict in list(self._load_attr_configuration('attributes').values()):
+        names.append(field_dict['name'])
+      self._field_names = names
+    else:
+      self._field_names = value
+
+
 
   def _validate_and_sum_prob(self)  :
       """ Check all user options within generate.py for validity  """
@@ -363,6 +460,7 @@ class DuplicateGen:
         raise Exception
       
       return select_prob_sum
+ 
     
   def _duplicate_distribution(self):
       """ Create a distribution for the number of duplicates for an original record """
@@ -433,6 +531,7 @@ class DuplicateGen:
       print('  %s' % (prob_dist_list))
       
       return prob_dist_list
+ 
  
   def _set_distribution(self, min_bound, max_bound, type_distrib):
     """ Set a distribution for family age gaps """
@@ -506,19 +605,17 @@ class DuplicateGen:
 
     return prob_dist_list
    
-  def _load_attr_configuration(self,type="attributes"):
-    
-    # check if file exist
-    #this_dir, this_filename = os.path.split(__file__)
-    #this_attr_file_name = os.path.join(this_dir, "config", self.attr_file_name)
-    #print(this_attr_file_name)
-    
-    #check config folder if not
-    with open(self.attr_file_name,"r") as json_file:
-       attr_data = json.load(json_file)
-    return attr_data[type]
-     
    
+  def _load_attr_configuration(self,type="attributes"):
+    if (self._attr_file_name is None):
+      attr_data = cf.DEFAULT_ATTR_CONFIG
+      return attr_data[type]
+    else:
+      with open(self.attr_file_name,"r") as json_file:
+        attr_data = json.load(json_file)
+      return attr_data[type]
+     
+     
   def _load_frequency_lookup_tables(self):
     """ Load frequency files and misspellings dictionaries """
  
@@ -1506,18 +1603,17 @@ class DuplicateGen:
      
   
 
-if __name__=="__main__":
-  #main()
-  
+if __name__=="__main__": 
+  pass
   # Test code
    #dsgen = DuplicateGen(10,10,1,1,1,"uniform","all", False, None,
    #                   './config/attr_config_file.uganda.json',
    #                   ['culture','sex','date_of_birth','given_name','surname',
    #                    'phone_number','national_identifier'])
    
-   dupgen = DuplicateGen(10,10,1,1,1,"uniform","all",False,None,'./config/attr_config_file.example.json',None)
-   df = dupgen.generate("dataframe")
-   df_true = dupgen.generate_true_links(df)
-   print(df)
-   print(df.columns)
+   #dupgen = DuplicateGen(10,10,1,1,1,"uniform","all",False,None,'./config/attr_config_file.example.json',None)
+   #df = dupgen.generate("dataframe")
+   #df_true = dupgen.generate_true_links(df)
+   #print(df)
+   #print(df.columns)
    

@@ -1,3 +1,2 @@
 from duplicategenerator.generate import DuplicateGen
-import duplicategenerator.utils
-import duplicategenerator.config as cf
+__all__ = ['DuplicateGen']
