@@ -206,11 +206,6 @@ class DuplicateGen:
     
     # set field_list based on field_names
     self.field_list = []
-     
-    # If field_name is None what about attribute with no probabiities 
-    # Check the name in field_names are valid
-    # culture is mandatory or if not all, order is important
-    # check (max_num_record_modifi < max_num_field_modifi):
     if(field_names is None):
       self.field_list = list(self._load_attr_configuration('attributes').values())
     else: 
@@ -218,6 +213,23 @@ class DuplicateGen:
         for field in self.field_names:
           if(field_dict['name'] == field):
             self.field_list.append(field_dict)
+    
+    # change default attribute select prob to have all fields
+    # culture is mandatory or if not all, order is important
+    
+    # A list of all probabilities to check ('select_prob' is checked separately)
+    self.prob_names = ['ins_prob','del_prob','sub_prob','trans_prob','val_swap_prob',
+                    'wrd_swap_prob','spc_ins_prob','spc_del_prob','miss_prob',
+                    'misspell_prob','new_val_prob']
+    
+    # VALIDATE CONFIGURATION
+    self.select_prob_sum = self._validate_and_sum_prob()
+    
+     # Check number of record to modify and number of fields
+    if (self.max_num_record_modifi < self.max_num_field_modifi):
+      raise ValueError('Maximal number of modifications per record must be equal to or larger than maximal number of modifications per field')
+      
+    # _validate json file format and data
   
   @property
   def num_org_records(self):
@@ -318,25 +330,24 @@ class DuplicateGen:
   
   @field_names.setter
   def field_names(self,value):
+    names = []
+    for field_dict in list(self._load_attr_configuration('attributes').values()):
+      names.append(field_dict['name'])
+      
     if (value is None):
-      names = []
-      for field_dict in list(self._load_attr_configuration('attributes').values()):
-        names.append(field_dict['name'])
       self._field_names = names
     else:
+      # culture field is mandatory
+      for field in value:
+        if (field not in names):
+          raise ValueError("Unkwown field value, please consult documentation")
       self._field_names = value
 
 
 
   def _validate_and_sum_prob(self)  :
       """ Check all user options within generate.py for validity  """
-            
-          
-            
-      # A list of all probabilities to check ('select_prob' is checked separately)
-      prob_names = ['ins_prob','del_prob','sub_prob','trans_prob','val_swap_prob',
-                    'wrd_swap_prob','spc_ins_prob','spc_del_prob','miss_prob',
-                    'misspell_prob','new_val_prob']
+                      
 
       select_prob_sum = 0.0  # Sum over all select probabilities
 
@@ -353,31 +364,28 @@ class DuplicateGen:
           print('Error: No field name given for field dictionary')
           raise Exception
         elif (field_dict['name'] == 'rec_id'):
-          print('Error: Illegal field name "rec_id" (used for record identifier)')
-          raise Exception
-        else:
-          self.field_names.append(field_dict['name'])
-
+          raise ValueError('Illegal field name "rec_id" (used for record identifier)')
+          
+        
         # field type
         if (field_dict.get('type','') not in ['freq','date','phone','ident','others']):
-          print('Error: Illegal or no field type given for field "%s": %s' % (field_dict['name'], field_dict.get('type','')))
-          raise Exception
+          raise ValueError('Illegal or no field type given for field "%s": %s' % (field_dict['name'], field_dict.get('type','')))
+          
 
         # field char_range
         if (field_dict.get('char_range','') not in ['alpha', 'alphanum','digit']):
-          print('Error: Illegal or no random character range given for ' + 'field "%s": %s' % (field_dict['name'], field_dict.get('char_range','')))
-          raise Exception
+          raise ValueError('Illegal or no random character range given for ' + 'field "%s": %s' % (field_dict['name'], field_dict.get('char_range','')))
+          
 
         # field type
         if (field_dict['type'] == 'freq'):
           if ('freq_file' not in field_dict):
-            print('Error: Field of type "freq" has no file name given')
-            raise Exception
+            raise ValueError('Field of type "freq" has no file name given')
+            
         elif (field_dict['type'] == 'date'):
           if (not ('start_date' in field_dict and 'end_date' in field_dict)):
-            print('Error: Field of type "date" has no start and/or end date given')
-            raise Exception
-
+            raise ValueError('Field of type "date" has no start and/or end date given')
+            
           else:  # Process start and end date
             start_date = eval(field_dict['start_date'])
             end_date =   eval(field_dict['end_date'])
@@ -390,61 +398,60 @@ class DuplicateGen:
 
         elif (field_dict['type'] == 'phone'):
           if (not ('area_codes' in field_dict and 'num_digits' in field_dict)):
-            print('Error: Field of type "phone" has no area codes and/or number ' + 'of digits given')
-            raise Exception
+            raise ValueError('Field of type "phone" has no area codes and/or number ' + 'of digits given')
+            
 
           else:  # Process area codes and number of digits
             if (isinstance(field_dict['area_codes'],str)):  # Only one area code
               field_dict['area_codes'] = [field_dict['area_codes']]  # Make it a list
             if (not isinstance(field_dict['area_codes'],list)):
-              print('Error: Area codes given are not a string or a list: %s' % \
+              raise ValueError('Area codes given are not a string or a list: %s' % \
                     (str(field_dict['area_codes'])))
-              raise Exception
+              
 
             if (not isinstance(field_dict['num_digits'],int)):
-              print('Error: Number of digits given is not an integer: %s (%s)' % \
+              raise ValueError('Number of digits given is not an integer: %s (%s)' % \
                     (str(field_dict['num_digits']), type(field_dict['num_digits'])))
-              raise Exception
-
+            
             self.field_list[i] = field_dict
 
         elif (field_dict['type'] == 'ident'):
           if (not ('start_id' in field_dict and \
                   'end_id' in field_dict)):
-            print('Error: Field of type "iden" has no start and/or end ' + \
+            raise ValueError('Field of type "iden" has no start and/or end ' + \
                   'identification number given')
-            raise Exception
+            
 
         # Check all the probabilities for this field
         if ('select_prob' not in field_dict):
-          field_dict['select_dict'] = 0.0
+          field_dict['select_prob'] = 0.0
         elif (field_dict['select_prob'] < 0.0) or (field_dict['select_prob'] > 1.0):
-          print('Error: Illegal value for select probability in dictionary for '+'field "%s": %f' % (field_dict['name'], field_dict['select_prob']))
+          raise ValueError('Illegal value for select probability in dictionary for '+'field "%s": %f' % (field_dict['name'], field_dict['select_prob']))
         else:
           select_prob_sum += field_dict['select_prob']
 
         field_prob_sum = 0.0
 
-        for prob in prob_names:
+        for prob in self.prob_names:
           if (prob not in field_dict):
             field_dict[prob] = 0.0
           elif (field_dict[prob] < 0.0) or (field_dict[prob] > 1.0):
-            print('Error: Illegal value for "%s" probability in dictionary for ' % (prob) + 'field "%s": %f' % (field_dict['name'], field_dict[prob]))
-            raise Exception
+            raise ValueError('Illegal value for "%s" probability in dictionary for ' % (prob) + 'field "%s": %f' % (field_dict['name'], field_dict[prob]))
+            
           else:
             field_prob_sum += field_dict[prob]
 
         if (field_prob_sum > 0.0) and (abs(field_prob_sum - 1.0) > 0.001):
-            print('Error: Sum of probabilities for field "%s" is not 1.0: %f' % \
+            raise ValueError('Sum of probabilities for field "%s" is not 1.0: %f' % \
                   (field_dict['name'], field_prob_sum))
-            raise Exception
+            
 
         # Create a list of field probabilities and insert into field dictionary
         #
         prob_list = []
         prob_sum =  0.0
 
-        for prob in prob_names:
+        for prob in self.prob_names:
           prob_list.append((prob, prob_sum))
           prob_sum += field_dict[prob]
 
@@ -456,8 +463,8 @@ class DuplicateGen:
       
       
       if (abs(select_prob_sum - 1.0) > 0.001):
-        print('Error: Field select probabilities do not sum to 1.0: %f' % (select_prob_sum))
-        raise Exception
+        raise ValueError('Field select probabilities do not sum to 1.0: %f' % (select_prob_sum))
+        
       
       return select_prob_sum
  
@@ -611,6 +618,7 @@ class DuplicateGen:
       attr_data = cf.DEFAULT_ATTR_CONFIG
       return attr_data[type]
     else:
+      ## Exception handling 
       with open(self.attr_file_name,"r") as json_file:
         attr_data = json.load(json_file)
       return attr_data[type]
@@ -1522,9 +1530,6 @@ class DuplicateGen:
     #
     random.seed()         
     start_time = time.time()
-    
-    # VALIDATE CONFIGURATION
-    select_prob_sum  = self._validate_and_sum_prob()
     
     # Create list of select probabilities - - - - - - - - - - - - - - - - - - - - -
     #
