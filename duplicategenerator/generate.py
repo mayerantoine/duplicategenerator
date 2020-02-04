@@ -177,7 +177,7 @@ class DuplicateGen:
              verbose_output = False, 
              culture = None,
              attr_file_name = None,
-             field_names = None):
+             field_names_prob = None):
        
     self.num_org_records = num_org_records
     self.num_dup_records = num_dup_records
@@ -202,16 +202,20 @@ class DuplicateGen:
     self.field_swap_prob = self._load_attr_configuration("field_swap_prob")
     self.error_type_distribution = self._load_attr_configuration("error_type_distribution")
     
-    self.field_names = field_names
+    self.field_names_prob = field_names_prob
+
+    self.field_names = list(self.field_names_prob.keys())
     
     # set field_list based on field_names
     self.field_list = []
-    if(field_names is None):
+    if(self.field_names is None):
       self.field_list = list(self._load_attr_configuration('attributes').values())
     else: 
       for field_dict in list(self._load_attr_configuration('attributes').values()):
         for field in self.field_names:
           if(field_dict['name'] == field):
+            # overwrite select_prob
+            field_dict['select_prob'] = self.field_names_prob[field]
             self.field_list.append(field_dict)
     
     # change default attribute select prob to have all fields
@@ -222,6 +226,7 @@ class DuplicateGen:
                     'wrd_swap_prob','spc_ins_prob','spc_del_prob','miss_prob',
                     'misspell_prob','new_val_prob']
     
+   
     # VALIDATE CONFIGURATION
     self.select_prob_sum = self._validate_and_sum_prob()
     
@@ -325,24 +330,26 @@ class DuplicateGen:
                                                        
   
   @property
-  def field_names(self):
-    return self._field_names
+  def field_names_prob(self):
+    return self._field_names_prob
   
-  @field_names.setter
-  def field_names(self,value):
-    names = []
+  @field_names_prob.setter
+  def field_names_prob(self,value):
+    names_prob = {}
     for field_dict in list(self._load_attr_configuration('attributes').values()):
-      names.append(field_dict['name'])
+      names_prob[field_dict['name']] = field_dict['select_prob']
       
     if (value is None):
-      self._field_names = names
+      self._field_names_prob = names_prob
     else:
       # culture field is mandatory
-      for field in value:
-        if (field not in names):
-          raise ValueError("Unkwown field value, please consult documentation")
-      self._field_names = value
-
+      names = value.keys()
+      for field in names:
+        if (field not in names_prob.keys()):
+          raise ValueError("Unkwown field value, please consult documentation.Field: {}".format(field))
+      if(abs(sum(value.values()) - 1) > 0.001 ):
+        raise ValueError("Field select probabilities do not sum to 1.0")
+      self._field_names_prob = value
 
 
   def _validate_and_sum_prob(self)  :
