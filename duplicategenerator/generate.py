@@ -724,6 +724,7 @@ class DuplicateGen:
        
     return freq_files, freq_files_length
    
+   
   def _create_original_records(self,freq_files_length,freq_files,all_rec_set):
     """ 
     Function to  create original records 
@@ -797,7 +798,7 @@ class DuplicateGen:
               depend_value = '-'.join(depend_value_list)
               if (depend_value in field_dict['lookup_dict']):
                 rand_val = random.choice(field_dict['lookup_dict'][depend_value])
-                print('XX: got combined dependency value: %s' % (rand_val), depend_field, depend_value)  
+                # print('XX: got combined dependency value: %s' % (rand_val), depend_field, depend_value)  
                 #####################
 
         elif (field_dict['type'] == 'date'):  # A date field
@@ -826,7 +827,7 @@ class DuplicateGen:
               rand_num = random.randint(0, freq_files_length['age']-1)
               rec_dict['age'] = freq_files['age'][rand_num]
 
-              print('XX:  randomly replaced age:', rec_dict) #################
+             # print('XX:  randomly replaced age:', rec_dict) #################
 
         elif (field_dict['type'] == 'phone'):  # A phone number field
 
@@ -897,6 +898,7 @@ class DuplicateGen:
     # end of loop for orinal records
 
     return org_rec
+   
    
   def _create_duplicate_records(self, org_rec,prob_dist_list,new_org_rec, 
                                  select_prob_list, all_rec_set,freq_files_length,freq_files):
@@ -1521,14 +1523,15 @@ class DuplicateGen:
 
     return dup_rec ,org_rec_used
 
+
   def generate(self,output="dict") :
     """ 
-    Main function to generate the synthetic dataset
+    Main function to generate the synthetic duplicate personal dataset
     
     Parameters
     -----------
     
-    output : Return type of the generator ( a dictionary or 
+    output : Return type of the dataset ( a dictionary or 
              a dataframe)
     
     """
@@ -1566,7 +1569,7 @@ class DuplicateGen:
 
     # CREATE DUPLICATE RECORDS
 
-    print('Step 4: Create duplicate records')
+    print('Step 3: Create duplicate records')
     dup_rec, org_rec_used = self._create_duplicate_records(org_rec,
                                                            prob_dist_list,
                                                            new_org_rec,
@@ -1575,8 +1578,9 @@ class DuplicateGen:
                                                            freq_files_length,
                                                            freq_files)
     
-    all_rec = new_org_rec  # Merge original and duplicate records
+    all_rec = new_org_rec  # 
     
+    print('Step 4: Merge original and duplicate records')
     if (self.num_dup_records > 0):
       all_rec.update(dup_rec)
     
@@ -1584,6 +1588,7 @@ class DuplicateGen:
       return all_rec
     elif(output == "dataframe"):
       return pandas.DataFrame(all_rec.values()).set_index("rec_id")
+    
     
   def generate_true_links(self,df_all_rec):
     """ 

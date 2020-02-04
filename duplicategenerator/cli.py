@@ -5,8 +5,7 @@ import os
 import random
 import sys
 import pandas
-import numpy
-import json
+
 
 from duplicategenerator.generate import DuplicateGen
 from duplicategenerator import utils 
@@ -86,84 +85,57 @@ def write_csv_output(output_file,all_rec):
 
 def execute_from_command_line():
   
- 
-  # =============================================================================
-  # Start main program
+  parser = argparse.ArgumentParser(prog = 'Duplicate generator', description='Duplicate generator commmand line tool')
+  
+  parser.add_argument("output_file", type = str, 
+                      help="Name of the output file")
+  
+  parser.add_argument("num_originals", type = int, 
+                      help="Number of original records to be created.")
+  
+  parser.add_argument("num_duplicates", type = int, 
+                      help="Number of duplicate records to be created (maximum number is 9)")
+  
+  parser.add_argument("max_duplicate_per_record", type = int, 
+                      help="The maximal number of duplicates that can becreated for one original record")
+  
+  parser.add_argument("max_modification_per_field", type = int, 
+                      help="The maximum number of modifications per field")
+  
+  parser.add_argument("max_modification_per_record", type = int, 
+                      help="The maximum number of modifications per record")
+  
+  parser.add_argument("distribution", choices=['uni', 'poi', 'zip','uniform', 'poisson','zipf'],
+                      help="The probability distribution used to create the duplicates (i.e the number of duplicates for one original)")
+  
+  parser.add_argument("modification_types", type = str, choices=['typ', 'ocr', 'pho', 'all'],
+                      help="Select the modification/error types that will be used when duplicates")
+  
+  parser.add_argument('--culture', type = str, default= None,
+                      help="Select the country or culture from wich you want demographic data")
+  
+  parser.add_argument("--config_file", type = str, default = None,
+                      help="Configuration file for the field to be generated")
+   
+  args = parser.parse_args()
+   
 
-  if (len(sys.argv) != 9):
-    print('Height arguments needed with %s:' % (sys.argv[0]))
-    print('  - Output file name')
-    print('  - Number of original records')
-    print('  - Number of duplicate records')
-    print('  - Maximal number of duplicate records for one original record')
-    print('  - Maximum number of modifications per field')
-    print('  - Maximum number of modifications per record')
-    print('  - Probability distribution for duplicates (uniform, poisson, zipf)')
-    print('  - Type of modification (typo, ocr, phonetic, all)')
-    print('All other parameters have to be set within the code')
-    sys.exit()
-
-  output_file =           sys.argv[1]
-  num_org_records =       int(sys.argv[2])
-  num_dup_records =       int(sys.argv[3])
-  max_num_dups =          int(sys.argv[4])
-  max_num_field_modifi =  int(sys.argv[5])
-  max_num_record_modifi = int(sys.argv[6])
-  prob_distribution =     sys.argv[7][:3]
-  type_modification =     sys.argv[8][:3]
-
-
-  if (num_org_records <= 0):
-    print('Error: Number of original records must be positive')
-    sys.exit()
-
-  if (num_dup_records < 0):
-    print('Error: Number of duplicate records must be zero or positive')
-    sys.exit()
-
-  if (max_num_dups <= 0) or (max_num_dups > 9):
-    print('Error: Maximal number of duplicates per record must be positive and less than 10')
-    sys.exit()
-
-  if (max_num_field_modifi <= 0):
-    print('Error: Maximal number of modifications per field must be positive')
-    sys.exit()
-
-  if (max_num_record_modifi <= 0):
-    print('Error: Maximal number of modifications per record must be positive')
-    sys.exit()
-
-  if (max_num_record_modifi < max_num_field_modifi):
-    print('Error: Maximal number of modifications per record must be equal to')
-    print('       or larger than maximal number of modifications per field')
-    sys.exit()
-
-  if (prob_distribution not in ['uni', 'poi', 'zip']):
-    print('Error: Illegal probability distribution: %s' % (sys.argv[7]))
-    print('       Must be one of: "uniform", "poisson", or "zipf"')
-    sys.exit()
-
-  if (type_modification not in ['typ', 'ocr', 'pho', 'all']):
-    print('Error: Illegal type of modification: %s' % (sys.argv[8]))
-    print('       Must be one of: "typo, "ocr" or "pho" or "all"')
-    sys.exit()
-
-  dsgen = DuplicateGen(
-           num_org_records,
-           num_dup_records,
-           max_num_dups,
-           max_num_field_modifi,
-           max_num_record_modifi,
-           prob_distribution,
-           type_modification,
-           True,
-           None,
-           './duplicategenerator/config/attr_config_file.example.json',
-           None)
-  all_records = dsgen.generate(output = "dataframe")
+  dupgen = DuplicateGen(
+           int(args.num_originals),
+           int(args.num_duplicates),
+           int(args.max_duplicate_per_record),
+           int(args.max_modification_per_field),
+           int(args.max_modification_per_record),
+           args.distribution,
+           args.modification_types,
+           False, # verbose
+           args.culture,
+           args.config_file,
+           None) # field_names
+  all_records = dupgen.generate(output = "dataframe")
   
   # WRITE CSV OUTPUT
-  all_records.to_csv(output_file)
+  all_records.to_csv(args.output_file,)
   
 if __name__=="__main__":
     execute_from_command_line()
