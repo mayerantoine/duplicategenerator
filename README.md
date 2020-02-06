@@ -6,3 +6,36 @@ This project is fork and an udpated version of the  [Freely Extensible Biomedica
 
 In this version we upgraded the initial code to python 3.6 , uses pandas, argparse and numpy, we decoupled the configuration from the code and re-designed the library api to make it easy and simple to generate a customizable  synthetic duplicate personal dataset.
 
+## Basic Usage
+
+```python
+import duplicategenerator
+
+dupgen =  duplicategenerator.DuplicateGen(
+            num_org_records = 10,
+            num_dup_records = 10,
+            max_num_dups = 1,
+            max_num_field_modifi= 1,
+            max_num_record_modifi= 1,
+            prob_distribution = "uniform",
+            type_modification= "all",
+            verbose_output = False,
+            culture = "eng",
+            attr_file_name = './attr_config_file.example.json',
+            field_names_prob = {'culture' : 0,'sex': 0,'given_name':0.3,'surname':0.3, 'date_of_birth':0.15,'phone_number':0.2,'national_identifier':0.05}
+        )
+
+
+df = dupgen.generate("dataframe")
+df
+
+   
+```
+
+##  Command line Usage
+
+```
+python -m duplicategenerator ./test/test5.csv 4000 1000 5 2 2 uniform all --culture eng --config_file ./duplicategenerator/
+config/attr_config_file.example.json
+
+```
