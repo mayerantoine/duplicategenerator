@@ -22,7 +22,9 @@ dupgen =  duplicategenerator.DuplicateGen(
             verbose_output = False,
             culture = "eng",
             attr_file_name = './attr_config_file.example.json',
-            field_names_prob = {'culture' : 0,'sex': 0,'given_name':0.3,'surname':0.3, 'date_of_birth':0.15,'phone_number':0.2,'national_identifier':0.05}
+            field_names_prob = {'culture' : 0,'sex': 0,'given_name':0.3,
+                                'surname':0.3, 'date_of_birth':0.15,
+                                'phone_number':0.2,'national_identifier':0.05}
         )
 
 
@@ -41,4 +43,4 @@ config/attr_config_file.example.json
 ```
 
 
-**NOTE**: This is a beta product. Most of orgininal authors to model phonetic, OCR and typographical modifications functionalities are in an 'alpha' state and have received limited testing.
+**NOTE**: This is a beta product. Most of orgininal authors functionalities to model phonetic, OCR and typographical modifications functionalities are in an 'alpha' state and have received limited testing.

@@ -6,7 +6,6 @@ import sys
 import pandas
 import numpy
 import json
-import pexpect
 
 import unittest
 import duplicategenerator
