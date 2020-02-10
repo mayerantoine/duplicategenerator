@@ -1047,7 +1047,7 @@ class DuplicateGen:
                     type_modification_to_apply = random.choice(list_type_of_error)
 
                 else:
-                    type_modification_to_apply = type_modification
+                    type_modification_to_apply = self.type_modification
 
                 # Find an original record that has so far not been used to create - - - - -
                 # duplicates
