@@ -39,3 +39,6 @@ python -m duplicategenerator ./test/test5.csv 4000 1000 5 2 2 uniform all --cult
 config/attr_config_file.example.json
 
 ```
+
+
+**NOTE**: This is a beta product. Most of orgininal authors to model phonetic, OCR and typographical modifications functionalities are in an 'alpha' state and have received limited testing.
