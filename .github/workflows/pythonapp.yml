@@ -42,7 +42,7 @@ jobs:
         pip install coveralls
         coveralls
   complete_coveralls:
-    needs: test
+    needs: build
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
