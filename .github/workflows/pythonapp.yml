@@ -39,7 +39,7 @@ jobs:
       env:
         COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        pip install coveralls
+        pip install https://github.com/bboe/coveralls-python/archive/github_actions.zip
         coveralls
   complete_coveralls:
     needs: build
