@@ -36,7 +36,7 @@ jobs:
       run: |
         python -m unittest
     - name: Coveralls
-      env: |
+      env:
         COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         pip install coveralls
