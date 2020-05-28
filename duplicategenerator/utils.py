@@ -690,9 +690,7 @@ def get_transformation(s, t):
     # - Pre-condition (default 'None') can be 'V' for vowel or 'C' for consonant
     # - Post-condition (default 'None') can be 'V' for vowel or 'C' for consonant
     #
-    def do_collect_replacement(
-        s, where, orgpat, newpat, precond, postcond, existcond, startcond
-    ):
+    def do_collect_replacement(s, where, orgpat, newpat, precond, postcond, existcond, startcond  ):
         vowels = "aeiouy"
         tmpstr = s
         changesstr = ""

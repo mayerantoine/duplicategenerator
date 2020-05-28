@@ -165,6 +165,7 @@ from duplicategenerator import config as cf
 
 
 class DuplicateGen:
+    
     def __init__(
         self,
         num_org_records,
@@ -177,9 +178,10 @@ class DuplicateGen:
         verbose_output=False,
         culture=None,
         attr_file_name=None,
-        field_names_prob=None,
-    ):
+        field_names_prob=None ):
 
+
+                
         self.num_org_records = num_org_records
         self.num_dup_records = num_dup_records
         self.max_num_dups = max_num_dups
@@ -341,7 +343,7 @@ class DuplicateGen:
     def type_modification(self, value):
         if value not in ["typ", "ocr", "pho", "all"]:
             raise ValueError(
-                'Illegal type of modification must be one of: "typo, "ocr" or "pho" or "all"'
+                'Illegal type of modification must be one of: "typ", "ocr" or "pho" or "all"'
             )
         self._type_modification = value
 
@@ -355,6 +357,7 @@ class DuplicateGen:
         for field_dict in list(self._load_attr_configuration("attributes").values()):
             names_prob[field_dict["name"]] = field_dict["select_prob"]
 
+        print(names_prob.keys())
         if value is None:
             self._field_names_prob = names_prob
         else:
@@ -803,24 +806,24 @@ class DuplicateGen:
 
     def _create_original_records(self, freq_files_length, freq_files, all_rec_set):
         """ 
-    Function to  create original records 
-    
-    The orignal records are created using look-up tables with real values and
-    their frequencies and dependencies or based on specific attribute generation 
-    rules.
-    
-    Parameters
-    ----------
-    freq_files_length : List of number of values for a  each frequency file
-    freq_files : List of list of values for each frequency file
-    all_rec_set: Set of all records (without identifier) used for checking that all records are different 
-    
-    Return
-    --------
-    org_rec : Dictionary for original records
-    
-    """
-
+        Function to  create original records 
+        
+        The orignal records are created using look-up tables with real values and
+        their frequencies and dependencies or based on specific attribute generation 
+        rules.
+        
+        Parameters
+        ----------
+        freq_files_length : List of number of values for a  each frequency file
+        freq_files : List of list of values for each frequency file
+        all_rec_set: Set of all records (without identifier) used for checking that all records are different 
+        
+        Return
+        --------
+        org_rec : Dictionary for original records
+        
+        """
+        random.seed(42)
         org_rec = {}  # Dictionary for original records
         rec_cnt = 0
 
@@ -852,8 +855,7 @@ class DuplicateGen:
                     # Check for dependencies and follow if a certain probability is given
                     #
                     if ("depend" in field_dict) and (
-                        random.random() <= field_dict["depend_prob"]
-                    ):
+                        random.random() <= field_dict["depend_prob"]):
 
                         depend_field = field_dict[
                             "depend"
@@ -866,6 +868,7 @@ class DuplicateGen:
 
                                 # Get the value from the current record in the dependency field
                                 #
+
                                 depend_value = rec_dict[depend_field].replace(" ", "")
                                 if depend_value in field_dict["lookup_dict"]:
                                     rand_val = random.choice(
@@ -889,8 +892,7 @@ class DuplicateGen:
                                 # print('XX: got combined dependency value: %s' % (rand_val), depend_field, depend_value)
                                 #####################
 
-                elif field_dict["type"] == "date":  # A date field
-
+                elif field_dict["type"] == "date":  # A date field     
                     rand_num = random.randint(
                         field_dict["start_epoch"], field_dict["end_epoch"] - 1
                     )
@@ -958,6 +960,12 @@ class DuplicateGen:
                         field_dict["start_id"], field_dict["end_id"] - 1
                     )
                     rand_val = str(rand_num)
+                    
+                    # Hack for uganda ART Number
+                    #if(field_dict['name'] == 'medical_record_number'):
+                    #    art_prefix = ['KSD','NSU','MBA','KSG','FPL','RUK','KUL','KMC','KLH','KUB','MPK']
+                    #    rand_mrn = random.choice(art_prefix).upper() + "-"
+                    #    rand_val = rand_mrn+str(rand_num)
 
                     if field_dict["name"] == "soc_sec_id":
                         # generate random 4 letters for Uganda NIN
@@ -1016,13 +1024,12 @@ class DuplicateGen:
         select_prob_list,
         all_rec_set,
         freq_files_length,
-        freq_files,
-    ):
+        freq_files):
         """  
-    Create duplicate records 
-    
-    """
-
+        Create duplicate records 
+        
+        """
+        random.seed(42)
         dup_rec = {}  # Dictionary for duplicate records
 
         org_rec_used = {}  # Dictionary with record IDs of original records used to
@@ -1078,7 +1085,10 @@ class DuplicateGen:
 
                 # Loop to create duplicate records - - - - - - - - - - - - - - - - - - - -
                 #
-                while (d < num_dups) and (rec_cnt < self.num_dup_records):
+                max_retry_num_dups = 10
+                retry_num_dups= 0
+                while (d < num_dups) and (rec_cnt < self.num_dup_records) and \
+                     (retry_num_dups < max_retry_num_dups):
 
                     if self.VERBOSE_OUTPUT == True:
                         print("  Generate duplicate %d:" % (d + 1))
@@ -1158,7 +1168,10 @@ class DuplicateGen:
                     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                     # Now introduce modifications up to the given maximal number
                     #
-                    while num_modif_in_record < self.max_num_record_modifi:
+                    max_retry_modif_in_record = 10
+                    retry_modif_in_record = 0
+                    while (num_modif_in_record < self.max_num_record_modifi) and \
+                             (retry_modif_in_record < max_retry_modif_in_record) :
 
                         # Randomly choose a field
                         #
@@ -1207,7 +1220,6 @@ class DuplicateGen:
                         # Loop over chosen number of modifications - - - - - - - - - - - - - -
                         #
                         for m in range(num_field_mod_to_do):
-
                             old_field_val = dup_rec_dict.get(field_name, None)
                             dup_field_val = old_field_val  # Modify this value
 
@@ -1690,11 +1702,9 @@ class DuplicateGen:
                             # -------------------------------------------------------------------
                             # Phonetic modifications
                             #
-                            elif (
-                                (type_modification_to_apply == "pho")
+                            elif ( (type_modification_to_apply == "pho")
                                 and ("pho_prob" in field_dict)
-                                and (old_field_val != None)
-                            ):
+                                and (old_field_val != None)):
 
                                 if random.random() <= field_dict["pho_prob"]:
                                     phonetic_changes = utils.get_transformation(
@@ -1709,6 +1719,9 @@ class DuplicateGen:
                                             dup_field_val = utils.apply_change(
                                                 old_field_val, ch
                                             )
+                                        else :     # else  ch = "" ????
+                                            retry_modif_in_record +=1
+                                   
 
                                         if self.VERBOSE_OUTPUT == True:
                                             print(
@@ -1725,11 +1738,9 @@ class DuplicateGen:
                             # -------------------------------------------------------------------
                             # OCR modifications
                             #
-                            elif (
-                                (type_modification_to_apply == "ocr")
+                            elif ((type_modification_to_apply == "ocr")
                                 and ("ocr_prob" in field_dict)
-                                and (old_field_val != None)
-                            ):
+                                and (old_field_val != None)):
 
                                 if random.random() <= field_dict["ocr_prob"]:
                                     ocr_changes = utils.get_transformation(
@@ -1744,6 +1755,8 @@ class DuplicateGen:
                                             dup_field_val = utils.apply_change(
                                                 old_field_val, ch
                                             )
+                                        else:
+                                            retry_modif_in_record +=1
 
                                         if self.VERBOSE_OUTPUT == True:
                                             print(
@@ -1766,9 +1779,7 @@ class DuplicateGen:
 
                                     # Get a delete position randomly
                                     #
-                                    rand_del_pos = utils.error_position(
-                                        dup_field_val, 0
-                                    )
+                                    rand_del_pos = utils.error_position(dup_field_val, 0)
 
                                     del_char = dup_field_val[rand_del_pos]
 
@@ -1894,7 +1905,8 @@ class DuplicateGen:
 
                             if dup_field_val != old_field_val:
                                 dup_rec_dict[field_name] = dup_field_val
-
+                    
+                    # END WHILE LOOP DUPLICATE RECORDS
                     # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                     # Now check if the duplicate record differs from the original
                     #
@@ -1906,9 +1918,7 @@ class DuplicateGen:
                     rec_list.sort()
                     rec_str = str(rec_list)
 
-                    if (
-                        rec_str not in all_rec_set
-                    ):  # Check if same record has not already
+                    if (rec_str not in all_rec_set):  # Check if same record has not already
                         # been created
                         all_rec_set.add(rec_str)
                         org_rec_used[org_rec_id] = 1
@@ -1923,6 +1933,7 @@ class DuplicateGen:
 
                         # Print original and duplicate records field by field - - - - - - - - -
                         #
+                   
                         if self.VERBOSE_OUTPUT == True:
                             print("  Original and duplicate records:")
                             print(
@@ -1945,12 +1956,13 @@ class DuplicateGen:
                             print()
 
                     else:
+                        retry_num_dups += 1 
                         if self.VERBOSE_OUTPUT == True:
                             print(
                                 '  No random modifications for record "%s" -> Choose another'
                                 % (dup_rec_id)
                             )
-
+                                
                     if self.VERBOSE_OUTPUT == True:
                         print()
 
@@ -1958,18 +1970,20 @@ class DuplicateGen:
 
     def generate(self, output="dict"):
         """ 
-    Main function to generate the synthetic duplicate personal dataset
-    
-    Parameters
-    -----------
-    
-    output : Return type of the dataset ( a dictionary or 
-             a dataframe)
-    
-    """
+        Main function to generate the synthetic duplicate personal dataset
+        
+        Parameters
+        -----------
+        
+        output : Return type of the dataset ( a dictionary or 
+                a dataframe)
+        
+        """
         # Initialise random number generator  - - - - - - - - - - - - - - - - - - - - -
         #
-        random.seed()
+
+        #random.seed(42)
+        random.seed(42)
         start_time = time.time()
         # Create list of select probabilities - - - - - - - - - - - - - - - - - - - - -
         #
@@ -2025,9 +2039,9 @@ class DuplicateGen:
 
     def generate_true_links(self, df_all_rec):
         """ 
-    Function to return all true links
-        
-    """
+        Function to return all true links
+            
+        """
 
         index = df_all_rec.index.to_series()
         keys = index.str.extract("rec-(\d+)", expand=True)[0]
