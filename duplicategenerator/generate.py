@@ -823,7 +823,7 @@ class DuplicateGen:
         org_rec : Dictionary for original records
         
         """
-        random.seed(42)
+        #random.seed(42)
         org_rec = {}  # Dictionary for original records
         rec_cnt = 0
 
@@ -962,10 +962,10 @@ class DuplicateGen:
                     rand_val = str(rand_num)
                     
                     # Hack for uganda ART Number
-                    #if(field_dict['name'] == 'medical_record_number'):
-                    #    art_prefix = ['KSD','NSU','MBA','KSG','FPL','RUK','KUL','KMC','KLH','KUB','MPK']
-                    #    rand_mrn = random.choice(art_prefix).upper() + "-"
-                    #    rand_val = rand_mrn+str(rand_num)
+                    if(field_dict['name'] == 'medical_record_number'):
+                        art_prefix = ['KSD','NSU','MBA','KSG','FPL','RUK','KUL','KMC','KLH','KUB','MPK']
+                        rand_mrn = random.choice(art_prefix).upper() + "-"
+                        rand_val = rand_mrn+str(rand_num)
 
                     if field_dict["name"] == "soc_sec_id":
                         # generate random 4 letters for Uganda NIN
@@ -1029,7 +1029,7 @@ class DuplicateGen:
         Create duplicate records 
         
         """
-        random.seed(42)
+        #random.seed(42)
         dup_rec = {}  # Dictionary for duplicate records
 
         org_rec_used = {}  # Dictionary with record IDs of original records used to
@@ -1063,10 +1063,11 @@ class DuplicateGen:
                 org_rec_id = "rec-%i-org" % (rand_rec_num)
 
                 while (org_rec_id in org_rec_used) or (org_rec_id not in org_rec):
-                    rand_rec_num = random.randint(
-                        0, self.num_org_records
-                    )  # Get new record number
-                    org_rec_id = "rec-%i-org" % (rand_rec_num)
+                     rand_rec_num = random.randint(
+                         0, self.num_org_records
+                     )  # Get new record number
+                     org_rec_id = "rec-%i-org" % (rand_rec_num)
+                     #print("Finding original record :",org_rec_id)
 
                 # Randomly choose how many duplicates to create from this record
                 #
@@ -1983,7 +1984,7 @@ class DuplicateGen:
         #
 
         #random.seed(42)
-        random.seed(42)
+        #random.seed(42)
         start_time = time.time()
         # Create list of select probabilities - - - - - - - - - - - - - - - - - - - - -
         #
