@@ -804,6 +804,7 @@ class DuplicateGen:
 
         return freq_files, freq_files_length
 
+    #FIXME create a sequence class insteat of method
     def _create_original_records(self, freq_files_length, freq_files, all_rec_set):
         """ 
         Function to  create original records 
