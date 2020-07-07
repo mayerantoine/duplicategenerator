@@ -1,7 +1,7 @@
 from .. import BaseProvider
 from collections import OrderedDict
 
-class Provider(BaseProvider):
+class GenderProvider(BaseProvider):
     """ Gender Provider class
     """    
     
