@@ -401,80 +401,7 @@ class Generator:
 
         return select_prob_sum
 
-        """ Set a distribution for family age gaps """
-
-        num_dup = 1
-        prob_sum = 0.0
-        prob_dist_list = [(num_dup, prob_sum)]
-        #num_dup_records_distrib = max_bound
-        #num_org_records_distrib = max_bound
-
-        #gap = max_bound - min_bound
-
-        self.prob_distribution = type_distrib
-        max_num_dups_distrib = gap
-
-        if self.prob_distribution == "uni":  # Uniform distribution
-
-            uniform_val = 1.0 / float(max_num_dups_distrib)
-
-            for i in range(max_num_dups_distrib - 1):
-                num_dup += 1
-                prob_dist_list.append((num_dup, uniform_val + prob_dist_list[-1][1]))
-
-        elif self.prob_distribution == "poi":  # Poisson distribution
-
-            def fac(n):  # Factorial of an integer number (recursive calculation)
-                if n > 1.0:
-                    return n * fac(n - 1.0)
-                else:
-                    return 1.0
-
-            poisson_num = []  # A list of poisson numbers
-            poisson_sum = 0.0  # The sum of all poisson number
-
-            # The mean (lambda) for the poisson numbers
-            #
-            mean = 1.0 + (
-                float(num_dup_records_distrib) / float(num_org_records_distrib)
-            )
-
-            for i in range(max_num_dups_distrib):
-                poisson_num.append((math.exp(-mean) * (mean ** i)) / fac(i))
-                poisson_sum += poisson_num[-1]
-
-            for i in range(max_num_dups_distrib):  # Scale so they sum up to 1.0
-                poisson_num[i] = poisson_num[i] / poisson_sum
-
-            for i in range(max_num_dups_distrib - 1):
-                num_dup += 1
-                prob_dist_list.append((num_dup, poisson_num[i] + prob_dist_list[-1][1]))
-
-        elif self.prob_distribution == "zip":  # Zipf distribution
-            zipf_theta = 0.5
-
-            denom = 0.0
-            for i in range(num_org_records_distrib):
-                denom += 1.0 / (i + 1) ** (1.0 - zipf_theta)
-
-            zipf_c = 1.0 / denom
-            zipf_num = []  # A list of Zipf numbers
-            zipf_sum = 0.0  # The sum of all Zipf number
-
-            for i in range(max_num_dups_distrib):
-                zipf_num.append(zipf_c / ((i + 1) ** (1.0 - zipf_theta)))
-                zipf_sum += zipf_num[-1]
-
-            for i in range(max_num_dups_distrib):  # Scale so they sum up to 1.0
-                zipf_num[i] = zipf_num[i] / zipf_sum
-
-            for i in range(max_num_dups_distrib - 1):
-                num_dup += 1
-                prob_dist_list.append((num_dup, zipf_num[i] + prob_dist_list[-1][1]))
-
-        return prob_dist_list
-
-
+      
     def _duplicate_distribution(self):
         """ Create a distribution for the number of duplicates for an original record """
         
@@ -1556,11 +1483,7 @@ class Generator:
                 #num_dups = utils.random_select(prob_dist_list)
                 num_dups = self.fake.random_element(prob_dist_list)[0]
                 print(num_dups)
-                
-                org_rec_dict = new_org_rec[org_rec_id]  # Get the original record
-                d = 0  # Loop counter for duplicates for this record
 
-                # Loop to create duplicate records for selected record - - - - - - 
 
                 rec_cnt +=1
                 
