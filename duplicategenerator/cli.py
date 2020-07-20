@@ -36,7 +36,7 @@ def execute_from_command_line():
     parser.add_argument(
         "max_duplicate_per_record",
         type=int,
-        help="The maximal number of duplicates that can becreated for one original record",
+        help="The maximal number of duplicates that can be created for one original record",
     )
 
     parser.add_argument(

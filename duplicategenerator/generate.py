@@ -162,7 +162,7 @@ import json
 
 from duplicategenerator import utils
 from duplicategenerator import config as cf
-
+#from orgrecord import OriginalRecords
 
 class DuplicateGen:
     
@@ -804,7 +804,7 @@ class DuplicateGen:
 
         return freq_files, freq_files_length
 
-    #FIXME create a sequence class insteat of method
+    #FIXME create a sequence class instead of method
     def _create_original_records(self, freq_files_length, freq_files, all_rec_set):
         """ 
         Function to  create original records 
@@ -1085,7 +1085,7 @@ class DuplicateGen:
 
                 d = 0  # Loop counter for duplicates for this record
 
-                # Loop to create duplicate records - - - - - - - - - - - - - - - - - - - -
+                # Loop to create duplicate records for selected record - - - - - - - - - - - - - - - - - - - -
                 #
                 max_retry_num_dups = 10
                 retry_num_dups= 0
@@ -1240,11 +1240,9 @@ class DuplicateGen:
                                 # Randomly choose a misspelling if the field value is found in the
                                 # misspellings dictionary
                                 #
-                                if (
-                                    (mod_op == "misspell_prob")
+                                if ((mod_op == "misspell_prob")
                                     and ("misspell_dict" in field_dict)
-                                    and (old_field_val in field_dict["misspell_dict"])
-                                ):
+                                    and (old_field_val in field_dict["misspell_dict"])):
 
                                     misspell_list = field_dict["misspell_dict"][
                                         old_field_val
@@ -1265,9 +1263,7 @@ class DuplicateGen:
                                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                 # Randomly exchange of a field value with another value
                                 #
-                                elif (mod_op == "val_swap_prob") and (
-                                    old_field_val != None
-                                ):
+                                elif (mod_op == "val_swap_prob") and (old_field_val != None):
 
                                     if (
                                         field_dict["type"] == "freq"
@@ -1287,9 +1283,7 @@ class DuplicateGen:
                                             rand_date[2] + rand_date[1] + rand_date[0]
                                         )
 
-                                    elif (
-                                        field_dict["type"] == "phone"
-                                    ):  # A phone number field
+                                    elif (field_dict["type"] == "phone"  ):  # A phone number field
                                         area_code = random.choice(
                                             field_dict["area_codes"]
                                         )
@@ -1314,9 +1308,7 @@ class DuplicateGen:
                                             )
                                         )
 
-                                    elif (
-                                        field_dict["type"] == "ident"
-                                    ):  # Identification no. field
+                                    elif ( field_dict["type"] == "ident" ):  # Identification no. field
                                         rand_num = random.randint(
                                             field_dict["start_id"],
                                             field_dict["end_id"] - 1,
@@ -1337,9 +1329,7 @@ class DuplicateGen:
                                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                 # Randomly set to missing value
                                 #
-                                elif (mod_op == "miss_prob") and (
-                                    old_field_val != None
-                                ):
+                                elif (mod_op == "miss_prob") and (old_field_val != None):
 
                                     dup_field_val = (
                                         cf.missing_value
@@ -1354,11 +1344,7 @@ class DuplicateGen:
                                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                 # Randomly swap two words if the value contains at least two words
                                 #
-                                elif (
-                                    (mod_op == "wrd_swap_prob")
-                                    and (old_field_val != None)
-                                    and (" " in old_field_val)
-                                ):
+                                elif ((mod_op == "wrd_swap_prob") and (old_field_val != None) and (" " in old_field_val) ):
 
                                     # Count number of words
                                     #
@@ -1390,9 +1376,7 @@ class DuplicateGen:
                                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                 # Randomly create a new value if the field value is empty (missing)
                                 #
-                                elif (mod_op == "new_val_prob") and (
-                                    old_field_val != None
-                                ):
+                                elif (mod_op == "new_val_prob") and (old_field_val != None ):
 
                                     if (
                                         field_dict["type"] == "freq"
@@ -1537,11 +1521,7 @@ class DuplicateGen:
                                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                 # Random deletion of a character
                                 #
-                                elif (
-                                    (mod_op == "del_prob")
-                                    and (old_field_val != None)
-                                    and (len(old_field_val) > 1)
-                                ):  # Must have at least 2 chars
+                                elif ((mod_op == "del_prob") and (old_field_val != None) and (len(old_field_val) > 1)):  # Must have at least 2 chars
 
                                     # Get a delete position randomly
                                     #
@@ -1571,11 +1551,7 @@ class DuplicateGen:
                                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                 # Random transposition of two characters
                                 #
-                                elif (
-                                    (mod_op == "trans_prob")
-                                    and (old_field_val != None)
-                                    and (len(dup_field_val) > 1)
-                                ):  # Must have at least 2 chars
+                                elif ((mod_op == "trans_prob") and (old_field_val != None) and (len(dup_field_val) > 1)):  # Must have at least 2 chars
 
                                     # Get a transposition position randomly
                                     #
@@ -1613,11 +1589,7 @@ class DuplicateGen:
                                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                 # Random insertion of a space (thus splitting a word)
                                 #
-                                elif (
-                                    (mod_op == "spc_ins_prob")
-                                    and (old_field_val != None)
-                                    and (len(dup_field_val.strip()) > 1)
-                                ):
+                                elif ( (mod_op == "spc_ins_prob")  and (old_field_val != None) and (len(dup_field_val.strip()) > 1)):
 
                                     # Randomly select the place where to insert a space (make sure no
                                     # spaces are next to this place)
@@ -1657,11 +1629,7 @@ class DuplicateGen:
                                 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                                 # Random deletion of a space (thus merging two words)
                                 #
-                                elif (
-                                    (mod_op == "spc_del_prob")
-                                    and (old_field_val != None)
-                                    and (" " in dup_field_val)
-                                ):  # Field must contain a space char.
+                                elif ( (mod_op == "spc_del_prob") and (old_field_val != None) and (" " in dup_field_val)):  # Field must contain a space char.
 
                                     # Count number of spaces and randomly select one to be deleted
                                     #
@@ -1995,6 +1963,8 @@ class DuplicateGen:
         for field_dict in self.field_list:
             select_prob_list.append((field_dict, prob_sum))
             prob_sum += field_dict["select_prob"]
+        
+        print("select_prob_list:",select_prob_list[2])
 
         # CREATE DISTRIBUTION
 
@@ -2066,14 +2036,4 @@ class DuplicateGen:
 
 if __name__ == "__main__":
     pass
-    # Test code
-    # dsgen = DuplicateGen(10,10,1,1,1,"uniform","all", False, None,
-    #                   './config/attr_config_file.uganda.json',
-    #                   ['culture','sex','date_of_birth','given_name','surname',
-    #                    'phone_number','national_identifier'])
 
-    # dupgen = DuplicateGen(10,10,1,1,1,"uniform","all",False,None,'./config/attr_config_file.example.json',None)
-    # df = dupgen.generate("dataframe")
-    # df_true = dupgen.generate_true_links(df)
-    # print(df)
-    # print(df.columns)

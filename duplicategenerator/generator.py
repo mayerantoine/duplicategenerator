@@ -15,6 +15,7 @@ from faker import Faker
 from providers.gender import GenderProvider
 from providers.name import NameProvider
 from orgrecord import OriginalRecords
+from duprecord import DuplicateRecords
 
 
 class Generator:
@@ -1491,7 +1492,7 @@ class Generator:
                 
 if __name__ == "__main__":
     
-    dupgen = Generator(3000,1500,3,2,2,"poi","all",False,
+    dupgen = Generator(20,5,3,2,2,"poi","all",False,
                          'fr_FR',
                          './config/attr_config_file.test.json',
                          {'locale' : 0,
@@ -1510,6 +1511,7 @@ if __name__ == "__main__":
 #    dupgen = Generator(50,10,5,2,2,"zipf","all",False,
 #                         'en_US',
 #                         './config/attr_config_file.test.json')
+
     select_prob_list = []
     prob_sum = 0.0
 
@@ -1519,7 +1521,24 @@ if __name__ == "__main__":
 
     new_org_rec = {}
     org_rec = dupgen.create_original_records()
-    prob_dist_list = dupgen._duplicate_distribution()
     
-    dupgen._create_duplicate(org_rec,prob_dist_list,new_org_rec,select_prob_list)
+    from pprint import pprint
+    pprint(org_rec)
+    
+    dup_rec = DuplicateRecords(
+        field_list = dupgen.field_list,
+        num_org_records = dupgen.num_org_records,
+        num_dups=5,
+        max_num_dups=dupgen.max_num_dups,
+        max_num_field_modifi=dupgen.max_num_field_modifi,
+        max_num_record_modifi=dupgen.max_num_record_modifi,
+        prob_names = dupgen.prob_names,
+        prob_distribution="poi",
+        type_modification="typ",
+        org_rec_id='rec-0-org',
+        org_rec=org_rec['rec-0-org'],
+        faker=dupgen.fake )   
+  
+  
+    #dupgen._create_duplicate(org_rec,prob_dist_list,new_org_rec,select_prob_list)
     #print(org_rec)
