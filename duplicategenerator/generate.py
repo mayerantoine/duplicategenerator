@@ -357,7 +357,6 @@ class DuplicateGen:
         for field_dict in list(self._load_attr_configuration("attributes").values()):
             names_prob[field_dict["name"]] = field_dict["select_prob"]
 
-        print(names_prob.keys())
         if value is None:
             self._field_names_prob = names_prob
         else:
@@ -1964,8 +1963,7 @@ class DuplicateGen:
             select_prob_list.append((field_dict, prob_sum))
             prob_sum += field_dict["select_prob"]
         
-        print("select_prob_list:",select_prob_list[2])
-
+        
         # CREATE DISTRIBUTION
 
         prob_dist_list = self._duplicate_distribution()

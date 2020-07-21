@@ -8,6 +8,7 @@ import os
 import pandas
 import numpy
 import json
+import logging
 import utils
 import config as cf
 
@@ -111,7 +112,8 @@ class Generator:
             raise ValueError(
                 "Maximal number of modifications per record must be equal to or larger than maximal number of modifications per field"
             )
-
+        
+        self.prob_dist_list = self._duplicate_distribution()
         # _validate json file format and data
 
     @property
@@ -452,12 +454,12 @@ class Generator:
             for i in range(self.max_num_dups - 1):
                 num_dup += 1
                 prob_dist_list.append((num_dup, zipf_num[i] + prob_dist_list[-1][1]))
-        print()
+        
         print("Create %i original and %i duplicate records"
             % (self.num_org_records, self.num_dup_records)
         )
         print(
-            "  Distribution of number of duplicates (maximal %i duplicates):"
+            "  Distribution of number of duplicates (maximal %i duplicates per record):"
             % (self.max_num_dups)
         )
         print("  %s" % (prob_dist_list))
@@ -1441,11 +1443,7 @@ class Generator:
         return dup_rec, org_rec_used
     
     
-    def _create_duplicate(self,
-                          org_rec,
-                          prob_dist_list,
-                          new_org_rec,
-                          select_prob_list):
+    def _create_duplicate(self,org_rec):
         
         if self.num_dup_records > 0:   
         
@@ -1477,21 +1475,44 @@ class Generator:
                     # Get new record number
                     rand_rec_num = self.fake.random_int(0, self.num_org_records) 
                     org_rec_id = "rec-%i-org" % (rand_rec_num)
-                    print("Finding original record :",org_rec_id)
+                    logging.info("Finding original record :",org_rec_id)
                     ## END
 
                 # Randomly choose how many duplicates to create from this record
                 #num_dups = utils.random_select(prob_dist_list)
-                num_dups = self.fake.random_element(prob_dist_list)[0]
-                print(num_dups)
-
-
+                #num_dups = self.fake.random_element(prob_dist_list)[0]
+                #print(num_dups)
+                org_rec_dict = org_rec[org_rec_id]  # Get the original record
+                duplicates  = DuplicateRecords(
+                                field_list = self.field_list,
+                                num_org_records = self.num_org_records,
+                                num_dup_records = self.num_dup_records,
+                                max_num_dups = self.max_num_dups,
+                                max_num_field_modifi = self.max_num_field_modifi,
+                                max_num_record_modifi = self.max_num_record_modifi,
+                                prob_names = self.prob_names,
+                                prob_distribution = self.prob_distribution,
+                                prob_dist_list = self.prob_dist_list,
+                                type_modification = type_modification_to_apply,
+                                field_swap_prob = self.field_swap_prob,
+                                rand_rec_num = rand_rec_num,
+                                org_rec_id = org_rec_id,
+                                org_rec = org_rec_dict,
+                                faker=self.fake )
+                
+                ## Loop over duplicates and add them to main dict
+                for dup in iter(duplicates):    
+                    print(dup)
                 rec_cnt +=1
                 
                 
                 
 if __name__ == "__main__":
     
+    logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
+                        format='%(levelname)s: %(asctime)s %(message)s', 
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
+      
     dupgen = Generator(20,5,3,2,2,"poi","all",False,
                          'fr_FR',
                          './config/attr_config_file.test.json',
@@ -1511,34 +1532,12 @@ if __name__ == "__main__":
 #    dupgen = Generator(50,10,5,2,2,"zipf","all",False,
 #                         'en_US',
 #                         './config/attr_config_file.test.json')
-
-    select_prob_list = []
-    prob_sum = 0.0
-
-    for field_dict in dupgen.field_list:
-        select_prob_list.append((field_dict, prob_sum))
-        prob_sum += field_dict["select_prob"]
-
     new_org_rec = {}
     org_rec = dupgen.create_original_records()
     
     from pprint import pprint
     pprint(org_rec)
-    
-    dup_rec = DuplicateRecords(
-        field_list = dupgen.field_list,
-        num_org_records = dupgen.num_org_records,
-        num_dups=5,
-        max_num_dups=dupgen.max_num_dups,
-        max_num_field_modifi=dupgen.max_num_field_modifi,
-        max_num_record_modifi=dupgen.max_num_record_modifi,
-        prob_names = dupgen.prob_names,
-        prob_distribution="poi",
-        type_modification="typ",
-        org_rec_id='rec-0-org',
-        org_rec=org_rec['rec-0-org'],
-        faker=dupgen.fake )   
+ 
   
-  
-    #dupgen._create_duplicate(org_rec,prob_dist_list,new_org_rec,select_prob_list)
+    dupgen._create_duplicate(org_rec)
     #print(org_rec)

@@ -1,3 +1,6 @@
+import math
+import logging
+import os
 import config as cf
 from faker import Faker
 from providers.duplicate import Provider as DuplicateProvider
@@ -11,15 +14,18 @@ class  DuplicateRecords():
     def __init__(self,
                  field_list,
                  num_org_records,
-                 num_dups,
+                 num_dup_records,
                  max_num_dups,
                  max_num_field_modifi,
                  max_num_record_modifi,
                  prob_distribution,
+                 prob_dist_list,
                  type_modification,
+                 rand_rec_num,
                  org_rec_id,
                  org_rec,
                  prob_names,
+                 field_swap_prob,
                  faker=None,
                  locale=None,
                  seed=None):
@@ -40,16 +46,34 @@ class  DuplicateRecords():
         self.prob_names = prob_names
         self.field_list = field_list
         self.num_org_records = num_org_records        
-        self.num_dups = num_dups
+        self.num_dup_records = num_dup_records
         self.max_num_dups = max_num_dups
         self.max_num_field_modifi = max_num_field_modifi
         self.max_num_record_modifi = max_num_record_modifi
         # distribution for the number of duplicates for an original record
         self.prob_distribution  = prob_distribution
         self.type_modification = type_modification
+        self.rand_rec_num = rand_rec_num,
         self.org_rec_id = org_rec_id
         self.org_rec = org_rec
+        self.field_swap_prob = field_swap_prob
+        self.prob_dist_list = prob_dist_list 
+        self.select_prob_list = []
+        prob_sum = 0.0
+        for field_dict in self.field_list:
+            self.select_prob_list.append((field_dict, prob_sum))
+            prob_sum += field_dict["select_prob"]
+        
+        # Randomly choose how many duplicates to create from this record
+        self.num_dups = self.fake.random_element(self.prob_dist_list)[0]
+        
+        logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"),
+                        format='%(levelname)s: %(asctime)s %(message)s', 
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
     
+    
+    def __repr__(self):
+        pass
     
     def _duplicate_distribution(self):
         """ Create a distribution for the number of duplicates for an original record """
@@ -135,53 +159,166 @@ class  DuplicateRecords():
     
     
     def __iter__(self):
-        pass
+        
+        d = 0
+        max_retry_num_dups = 10
+        retry_num_dups= 0
+        org_rec_dict = self.org_rec
+        
+        while ( d < self.num_dups) and (retry_num_dups < max_retry_num_dups):
+            logging.info(f"Generate duplicate :{d+1}")
+            
+            # Create a duplicate of the original record
+            dup_rec_dict = (org_rec_dict.copy())  # Make a copy of the original record
+            dup_rec_id = "rec-%i-dup-%i" % (rand_rec_num, d)
+            dup_rec_dict["rec_id"] = dup_rec_id
+
+            # Count the number of modifications in this record
+            num_modif_in_record = 0
+  
+            # Set the field modification counters to zero for all fields
+            field_mod_count_dict = {}
+            for field_dict in self.field_list:
+                field_mod_count_dict[field_dict["name"]] = 0
+            
+            # Do random swapping between fields if two or more modifications in record
+            if self.max_num_record_modifi > 1:
+
+                if type_modification_to_apply == "typ":
+
+                    # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                    # Random swapping of values between a pair of field values
+                    #
+                    field_swap_pair_list = list(self.field_swap_prob.keys())
+                    random.shuffle(field_swap_pair_list)
+
+                    for field_pair in field_swap_pair_list:
+
+                        if (
+                            random.random() <= self.field_swap_prob[field_pair]
+                        ) and (
+                            num_modif_in_record
+                            <= (self.max_num_record_modifi - 2)
+                        ):
+
+                            # convert to tuple
+                            field_pair = eval(field_pair)
+                            fname_a, fname_b = field_pair
+
+                            # Make sure both fields are in the record dictionary
+                            #
+                            if (fname_a in dup_rec_dict) and (
+                                fname_b in dup_rec_dict
+                            ):
+                                fvalue_a = dup_rec_dict[fname_a]
+                                fvalue_b = dup_rec_dict[fname_b]
+
+                                dup_rec_dict[
+                                    fname_a
+                                ] = fvalue_b  # Swap field values
+                                dup_rec_dict[fname_b] = fvalue_a
+
+                                num_modif_in_record += 2
+
+                                field_mod_count_dict[fname_a] = (
+                                    field_mod_count_dict[fname_a] + 1
+                                )
+                                field_mod_count_dict[fname_b] = (
+                                    field_mod_count_dict[fname_b] + 1
+                                )
+
+                                logging.info('Swapped fields "%s" and "%s": "%s" <-> "%s"'
+                                        % (fname_a, fname_b, fvalue_a, fvalue_b))
+
+            
+            max_retry_modif_in_record = 10
+            retry_modif_in_record = 0
+            
+            while (num_modif_in_record < self.max_num_record_modifi) and (retry_modif_in_record < max_retry_modif_in_record) :
+        
+                # Randomly choose a field
+                #field_dict = utils.random_select(select_prob_list)
+                field_dict = self.fake.random_select(select_prob_list)
+                field_name = field_dict["name"]
+
+                # Make sure this field hasn't been modified already
+                while (field_mod_count_dict[field_name] == self.max_num_field_modifi):
+                    #field_dict = utils.random_select(select_prob_list)
+                    field_dict = self.fake.random_select(select_prob_list)
+                    field_name = field_dict["name"]
+
+                if field_dict["char_range"] == "digit":
+                    field_range = string.digits
+                elif field_dict["char_range"] == "alpha":
+                    field_range = string.ascii_lowercase
+                elif field_dict["char_range"] == "alphanum":
+                    field_range = string.digits + string.ascii_lowercase
+
+                # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                # Randomly select the number of modifications to be done in this field
+                # (and make sure we don't too many modifications in the record)
+                num_field_mod_to_do = random.randint(
+                    1, self.max_num_field_modifi
+                )
+
+                num_rec_mod_to_do = (
+                    self.max_num_record_modifi - num_modif_in_record
+                )
+
+                if num_field_mod_to_do > num_rec_mod_to_do:
+                    num_field_mod_to_do = num_rec_mod_to_do
+
+                num_modif_in_field = (
+                    0  # Count  number of modifications in this field
+                )
+
+                org_field_val = org_rec_dict.get(
+                    field_name, None
+                )  # Get original value
+                
+                # Loop over chosen number of modifications - - - - - - - - - - - - - -
+                for m in range(num_field_mod_to_do):
+                    old_field_val = dup_rec_dict.get(field_name, None)
+                    dup_field_val = old_field_val  # Modify this value
+                    
+                    dup_field_val = _modify_field(dup_field_val,old_field_val,type_modification)
+                    
+                    # Now check if the modified field value is d
+                    
+                if (old_field_val == org_field_val) and (dup_field_val != old_field_val):
+                    # The first field modification
+                    field_mod_count_dict[field_name] = 1
+                    num_modif_in_record += 1
+                    
+                elif (old_field_val != org_field_val) and (dup_field_val != old_field_val):
+                    # Following field mods.
+                    field_mod_count_dict[field_name] += 1
+                    num_modif_in_record += 1
+                    
+                if dup_field_val != old_field_val:
+                    dup_rec_dict[field_name] = dup_field_val
+                
+                
+            
+            
+            yield d
+            d +=1
+        
     
     def _create_duplicates(self):
         # while < num_dups
+        # while number of modif per record
+        # select a field from record using select_prob_list
+        # while number of modif per field
+        # based on type of modif
+        # select random modif
+        # modif field
+        
         pass
-       
+    
+    def _modify_field(self,mod_op,field_type):
+        pass
+      
 if __name__ == "__main__":
-    
-    org_rec_1 = {'city': 'Lake Edwinberg',
-               'date_of_birth': datetime.date(1961, 9, 17),
-               'email': 'james41@mcclure.com',
-               'gender': 'Female',
-               'given_name': 'Melissa',
-               'phone_number': '+1-840-804-5074x6177',
-               'postcode': '58505',
-               'rec_id': 'rec-7-org',
-               'ssn': '290-62-4322',
-               'street_address': '1227 West Light Suite 536',
-               'surname': 'Stanley'}
-    
-    org_rec_2 = {'city': 'New Maria',
-               'date_of_birth': datetime.date(1956, 10, 1),
-               'email': 'joshuajimenez@smith.net',
-               'gender': 'Female',
-               'given_name': 'Selena',
-               'phone_number': '070.451.9189x3171',
-               'postcode': '56930',
-               'rec_id': 'rec-6-org',
-               'ssn': '106-91-4015',
-               'street_address': '750 Jeffery Ports Suite 736',
-               'surname': 'Mullen'}
-    
-    fake = Faker('en_GB')
-    fake.seed_instance(2121)
-    
-    dup_rec = DuplicateRecords(
-        field_list = fields,
-        num_org_records = 5000,
-        num_dups=5,
-        max_num_dups=5,
-        max_num_field_modifi=2,
-        max_num_record_modifi=2,
-        prob_names = names,
-        prob_distribution="poi",
-        type_modification="typ",
-        org_rec_id='rec-1-org',
-        org_rec=org_rec_1,
-        faker=fake )   
-
+    pass
             
